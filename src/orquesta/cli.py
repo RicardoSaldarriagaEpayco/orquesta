@@ -58,6 +58,23 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--baseline", help="EvalRun JSON de la línea base para comparar")
     run.add_argument("--record", help="ruta donde escribir el PromotionRecord")
 
+    receipt = commands.add_parser("receipt", help="recibos firmados de las puertas de calidad").add_subparsers(
+        dest="action", required=True
+    )
+    keygen = receipt.add_parser("keygen", parents=[common])
+    keygen.add_argument("--key", help="ruta de la llave privada (por defecto ~/.config/orquesta/receipt.key)")
+    signer = receipt.add_parser("sign", parents=[common])
+    signer.add_argument("--repo", required=True)
+    signer.add_argument("--check", required=True)
+    signer.add_argument("--command", dest="check_command", required=True)
+    signer.add_argument("--tool-version", required=True)
+    signer.add_argument("--result", choices=["pass", "fail"], required=True)
+    signer.add_argument("--key")
+    checker = receipt.add_parser("verify", parents=[common])
+    checker.add_argument("--repo", required=True)
+    checker.add_argument("--sha", default="HEAD")
+    checker.add_argument("--public-key", action="append", required=True)
+
     return parser
 
 
@@ -147,7 +164,8 @@ def _policy_eval(args: argparse.Namespace) -> int:
     started = time.monotonic()
     workspace = Workspace(args.workspace)
     rules, sha = load_rules(workspace, args.sha)
-    decision = evaluate(request, rules, GitEnvironment(main_checkout(str(workspace.path.resolve()))), sha)
+    env = GitEnvironment(main_checkout(str(workspace.path.resolve())), receipt_keys=rules.receipt_keys)
+    decision = evaluate(request, rules, env, sha)
     if os.environ.get("ORQUESTA_AUDIT_DSN"):
         from orquesta.audit.sink import tenant, writer_from_env
 
@@ -238,6 +256,38 @@ def _audit_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _receipt_key(args: argparse.Namespace) -> Path:
+    from orquesta.evidence.receipt import DEFAULT_KEY
+
+    return Path(args.key) if args.key else DEFAULT_KEY
+
+
+def _receipt_keygen(args: argparse.Namespace) -> int:
+    from orquesta.evidence.receipt import keygen
+
+    print(keygen(_receipt_key(args)))
+    return 0
+
+
+def _receipt_sign(args: argparse.Namespace) -> int:
+    from orquesta.evidence.receipt import load_private, sign, store
+
+    signed = sign(
+        args.repo, args.check, args.check_command, args.tool_version, args.result, load_private(_receipt_key(args))
+    )
+    path = store(args.repo, signed)
+    _emit({**signed.to_json(), "path": str(path)})
+    return 0
+
+
+def _receipt_verify(args: argparse.Namespace) -> int:
+    from orquesta.evidence.receipt import load, resolve_sha, verify
+
+    checked = verify(args.repo, load(args.repo, resolve_sha(args.repo, args.sha)), args.public_key)
+    print(f"recibo válido: {checked.check} sobre {checked.sha[:7]} ({checked.at})")
+    return 0
+
+
 HANDLERS: dict[tuple[str, str], Callable[[argparse.Namespace], int]] = {
     ("registry", "list"): _registry_list,
     ("registry", "lock"): _registry_lock,
@@ -246,6 +296,9 @@ HANDLERS: dict[tuple[str, str], Callable[[argparse.Namespace], int]] = {
     ("policy", "test"): _policy_test,
     ("eval", "run"): _eval_run,
     ("audit", "verify"): _audit_verify,
+    ("receipt", "keygen"): _receipt_keygen,
+    ("receipt", "sign"): _receipt_sign,
+    ("receipt", "verify"): _receipt_verify,
 }
 
 

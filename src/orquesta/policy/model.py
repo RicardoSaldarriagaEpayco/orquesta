@@ -58,6 +58,7 @@ class Rules:
     attribution: tuple[re.Pattern[str], ...]
     pr_requires_receipt: bool
     readonly_repos: tuple[str, ...]
+    receipt_keys: tuple[str, ...] = ()
 
     @classmethod
     def build(cls, workspace_root: str, policy: dict[str, object], readonly: list[str]) -> "Rules":
@@ -69,6 +70,7 @@ class Rules:
             attribution=tuple(re.compile(p, re.IGNORECASE) for p in policy["ai_attribution_patterns"]),
             pr_requires_receipt=bool(policy["pr_requires_receipt"]),
             readonly_repos=tuple(readonly),
+            receipt_keys=tuple(str(k) for k in policy.get("receipt_public_keys") or ()),
         )
 
     def protected(self, branch: str) -> bool:

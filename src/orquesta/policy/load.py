@@ -56,6 +56,7 @@ def main_checkout(path: str) -> str:
 class GitEnvironment:
     workspace: str
     workspace_name: str = ""
+    receipt_keys: tuple[str, ...] = ()
     _common: str = field(default="", init=False)
 
     def __post_init__(self) -> None:
@@ -85,7 +86,20 @@ class GitEnvironment:
 
     def has_receipt(self, top: str, sha: str) -> bool:
         common = _git(top, "rev-parse", "--path-format=absolute", "--git-common-dir")
-        return bool(common) and os.path.exists(os.path.join(common, "epw-ready", sha))
+        if not common:
+            return False
+        if os.path.exists(os.path.join(common, "epw-ready", sha)):
+            return True
+        if not self.receipt_keys:
+            return False
+        from orquesta.errors import ReceiptInvalid
+        from orquesta.evidence.receipt import load, verify
+
+        try:
+            verify(top, load(top, sha), list(self.receipt_keys))
+        except ReceiptInvalid:
+            return False
+        return True
 
     def read_text(self, path: str) -> str | None:
         try:

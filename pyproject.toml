@@ -8,6 +8,7 @@ license-files = ["LICENSE"]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "anthropic==2.3.0",
+    "cryptography==50.0.2",
     "jsonschema==4.26.0",
     "psycopg[binary]==3.3.6",
     "pydantic==2.14.2",
@@ -41,6 +42,7 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "SIM"]
 "src/orquesta/policy/load.py" = ["S506", "S603", "S607"]
 "src/orquesta/audit/chain.py" = ["S608"]
 "src/orquesta/gateway/openai_compatible.py" = ["S310"]
+"src/orquesta/evidence/receipt.py" = ["S603", "S607"]
 "scripts/**" = ["S603", "S607"]
 
 [tool.pytest.ini_options]

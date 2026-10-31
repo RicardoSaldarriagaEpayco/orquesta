@@ -45,7 +45,7 @@ Un adaptador que no encuentra el motor, recibe `2` o `3`, o lee una respuesta il
 | `self-merge` | `gh pr merge` y el merge por la API | — |
 | `push-protected` | `git push` a una rama protegida o solo local | `protected_branches`, `local_branches` |
 | `ai-attribution` | crear o editar un PR cuyo cuerpo o `--body-file` trae atribución de IA | `ai_attribution_patterns` |
-| `pr-without-receipt` | crear un PR de un commit sin recibo de la puerta de calidad | `pr_requires_receipt` |
+| `pr-without-receipt` | crear un PR de un commit sin recibo de la puerta de calidad (marcador local o `EvidenceReceipt` firmado con una llave de `receipt_public_keys`) | `pr_requires_receipt`, `receipt_public_keys` |
 | `worktree-outside-root` | worktrees dentro de un repo de producto | `worktree_root` |
 | `spec-outside-root` | spec-kit y `specs/`/`.specify/` dentro de un repo de producto | `spec_root` |
 | `readonly-repo` | escrituras y comandos con efecto en un repo de solo lectura | `repos[].write: false` de `workspace.yaml` |

@@ -10,6 +10,9 @@ ni en sus repos; solo leen por `git show` y escriben en la base de auditoría o 
 | `registry verify --workspace <ruta> --lock <archivo>` | Recalcula digests y compara | `0` · `6` difiere |
 | `policy eval --workspace <ruta> --sha <sha> [--hook]` | Evalúa un `PolicyRequest` de stdin ([policy-decision.md](policy-decision.md)) | `0` · `2` · `3` |
 | `policy test --workspace <ruta> --sha <sha> --fixtures <archivo>` | Corre un fixture de paridad con las reglas del SHA | `0` · `1` algún caso difiere |
+| `receipt keygen [--key <ruta>]` | Crea la llave Ed25519 del operador (`0600`, nunca sobrescribe) e imprime la pública | `0` · `9` |
+| `receipt sign --repo <ruta> --check <nombre> --command <cmd> --tool-version <v> --result pass\|fail` | Firma y guarda el recibo de HEAD en `<git-common-dir>/orquesta-receipts/<sha>.json` | `0` · `9` · `11` |
+| `receipt verify --repo <ruta> [--sha <ref>] --public-key <b64>...` | Verifica firma, llave reconocida, commit y árbol, y que la puerta pasó | `0` · `11` recibo inválido |
 | `audit verify` | Recorre la cadena HMAC | `0` · `7` cadena rota · `9` sin llave o sin base |
 | `eval run --workspace <ruta> --suite <ruta-en-workspace> --sha <sha> --provider fake\|anthropic [--answers <tabla>] [--baseline <EvalRun>] [--record <ruta>]` | Corre una suite de ruteo y, con `--record`, escribe el `PromotionRecord` | `0` · `8` suite inválida |
 
@@ -18,7 +21,7 @@ ni en sus repos; solo leen por `git show` y escriben en la base de auditoría o 
 `AssetError(asset_id, field, reason)`, `ShaNotApproved(sha)`, `LockMismatch(differences)`, `AuditChainBroken(seq)`,
 `AuditKeyInsecure(path, reason)`, `ModelNotAllowed(provider, model)`, `ProviderNotAllowed(provider)`,
 `ProviderError(provider, reason)`, `SuiteInvalid(suite, reason)`, `BudgetExceeded(limit_usd, spent_usd)`
-(código `10`). Se imprimen como JSON en stderr con `--json` y como
+(código `10`), `KeyInsecure(path, reason)` (código `9`), `ReceiptInvalid(sha, reason)` (código `11`). Se imprimen como JSON en stderr con `--json` y como
 una línea legible sin él.
 
 ## Entorno

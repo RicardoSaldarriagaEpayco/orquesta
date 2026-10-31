@@ -17,8 +17,8 @@
 
 - [x] N009 [P] [US3] Segundo proveedor real detrás de `ModelProvider`: `OpenAICompatibleProvider` para servidores con la API de OpenAI (vLLM, Ollama, gateways privados), probado sin red (FR-039a)
 - [x] N010 [US3] Tope de costo: presupuesto por tenant y por corrida en el gateway; al agotarse, `BudgetExceeded` antes de llamar, con evento auditado (FR-039)
-- [ ] N011 [P] [US5] `EvidenceReceipt`: contrato JSON Schema, firma Ed25519 con llave del operador, `orquesta receipt sign|verify`, vencimiento por cambio de insumos (FR-046)
-- [ ] N012 [US5] `pr-without-receipt` acepta recibos firmados vigentes además del marcador local
+- [x] N011 [P] [US5] `EvidenceReceipt`: contrato JSON Schema, firma Ed25519 con llave del operador, `orquesta receipt sign|verify`, vencimiento por cambio de insumos (FR-046)
+- [x] N012 [US5] `pr-without-receipt` acepta recibos firmados vigentes además del marcador local
 - [ ] N013 [P] [US4] Evaluadores restantes de FR-031: uso de herramientas, patrón en el mensaje final y recibos esperados, con métricas propias
 - [ ] N014 [US2] Job de CI de paridad: corre `tests/policy/fixtures.yaml` contra el motor y contra un adaptador de hook de ejemplo (SC-008)
 - [ ] N015 Publicar el repo con CI activa y el secreto `TENANT_TERMS_FILE`; README con guía de integración para un tenant

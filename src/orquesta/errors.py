@@ -120,3 +120,25 @@ class BudgetExceeded(OrquestaError):
 
     def fields(self) -> dict[str, object]:
         return {"limit_usd": self.limit_usd, "spent_usd": self.spent_usd}
+
+
+class KeyInsecure(OrquestaError):
+    exit_code = 9
+
+    def __init__(self, path: str, reason: str) -> None:
+        self.path, self.reason = path, reason
+        super().__init__(f"llave {path}: {reason}")
+
+    def fields(self) -> dict[str, object]:
+        return {"path": self.path, "reason": self.reason}
+
+
+class ReceiptInvalid(OrquestaError):
+    exit_code = 11
+
+    def __init__(self, sha: str, reason: str) -> None:
+        self.sha, self.reason = sha, reason
+        super().__init__(f"recibo de {sha[:12]}: {reason}")
+
+    def fields(self) -> dict[str, object]:
+        return {"sha": self.sha, "reason": self.reason}
