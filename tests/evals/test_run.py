@@ -18,7 +18,7 @@ from orquesta.workspace import Workspace
 
 from .conftest import correct_answers, make_suite
 
-CONTRACT = json.loads((Path(__file__).parents[1] / "contracts" / "eval-case.schema.json").read_text())
+CONTRACT = json.loads((Path(__file__).parents[2] / "contracts" / "eval-case.schema.json").read_text())
 
 
 class Sink:

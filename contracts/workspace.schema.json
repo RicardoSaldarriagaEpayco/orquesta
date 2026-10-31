@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workspace.schema.json",
+  "title": "WorkspaceManifest",
+  "description": "workspace.yaml: descripción legible por máquina del portafolio (FR-006). Se valida contra docs/ecosystem.md y specs/productos/README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "tenant", "jira", "repos"],
+  "properties": {
+    "version": { "const": 1 },
+    "tenant": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "jira": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projects"],
+      "properties": {
+        "projects": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9]+$" } }
+      }
+    },
+    "repos": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/repo" } }
+  },
+  "$defs": {
+    "repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "agent", "domain", "risk", "write"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+        "agent": { "type": ["string", "null"], "pattern": "^[a-z0-9-]+-agent$" },
+        "domain": { "type": ["string", "null"], "pattern": "^[a-z0-9-]+$" },
+        "jira": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["project"],
+          "properties": {
+            "project": { "type": "string" },
+            "also": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+            "labels": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+          }
+        },
+        "risk": { "enum": ["payments", "credentials", "infra-prod", "standard", "qa-env"] },
+        "write": { "type": "boolean" },
+        "qa": { "type": ["string", "null"] },
+        "own_spec": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      },
+      "allOf": [
+        { "if": { "properties": { "risk": { "const": "infra-prod" } } }, "then": { "properties": { "write": { "const": false } } } }
+      ]
+    }
+  }
+}

@@ -10,7 +10,7 @@ from orquesta.audit.key import load_key
 from orquesta.cli import main
 from orquesta.errors import AuditChainBroken, AuditKeyInsecure
 
-CONTRACT = json.loads((Path(__file__).parents[1] / "contracts" / "audit-event.schema.json").read_text())
+CONTRACT = json.loads((Path(__file__).parents[2] / "contracts" / "audit-event.schema.json").read_text())
 CANARY = "sk-canario-a1b2c3d4e5f6g7h8"
 SHA = "a" * 40
 

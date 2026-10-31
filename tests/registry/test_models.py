@@ -9,7 +9,7 @@ from orquesta.registry.models import AgentAssetManifest
 from orquesta.registry.resolve import resolve
 from orquesta.workspace import Workspace
 
-CONTRACT = json.loads((Path(__file__).parents[1] / "contracts" / "agent-asset-manifest.schema.json").read_text())
+CONTRACT = json.loads((Path(__file__).parents[2] / "contracts" / "agent-asset-manifest.schema.json").read_text())
 
 VALID = {
     "id": "skill/ship",
