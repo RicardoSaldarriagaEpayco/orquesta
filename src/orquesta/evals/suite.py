@@ -34,6 +34,13 @@ def outcome(expected: Expected) -> str:
     return "ask" if isinstance(expected, ExpectAsk) else "no_action"
 
 
+class EpisodeChecks(Strict):
+    tools_allowed: list[str] | None = None
+    tools_required: list[str] = Field(default_factory=list)
+    final_pattern: str | None = Field(default=None, min_length=1)
+    receipts: list[str] = Field(default_factory=list)
+
+
 class EvalCase(Strict):
     id: str = Field(pattern=ID)
     ticket: str = Field(pattern=r"^[A-Z][A-Z0-9]+-[0-9]+$")
@@ -43,6 +50,7 @@ class EvalCase(Strict):
     expected: Expected
     near_miss: bool
     tags: list[str] = Field(default_factory=list)
+    checks: EpisodeChecks | None = None
 
 
 class EvalSuite(Strict):

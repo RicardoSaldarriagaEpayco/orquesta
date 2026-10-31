@@ -5,36 +5,166 @@
   "description": "evals/<suite>/cases.yaml (FR-031, FR-032). Sin texto de notas de HU ni datos de comercios.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["suite", "runs", "engine", "timeout_s", "allowed_tools", "cases"],
+  "required": [
+    "suite",
+    "runs",
+    "engine",
+    "timeout_s",
+    "allowed_tools",
+    "cases"
+  ],
   "properties": {
-    "suite": { "type": "string", "pattern": "^[a-z0-9-]+$" },
-    "runs": { "type": "integer", "minimum": 1 },
-    "engine": { "type": "string" },
-    "timeout_s": { "type": "integer", "minimum": 1 },
-    "allowed_tools": { "type": "array", "items": { "type": "string" } },
-    "margin": { "type": "number", "minimum": 0, "maximum": 1 },
-    "cases": { "type": "array", "minItems": 30, "items": { "$ref": "#/$defs/case" } }
+    "suite": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "runs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "engine": {
+      "type": "string"
+    },
+    "timeout_s": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "allowed_tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "margin": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 30,
+      "items": {
+        "$ref": "#/$defs/case"
+      }
+    }
   },
   "$defs": {
     "case": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "ticket", "project", "summary", "expected", "near_miss"],
+      "required": [
+        "id",
+        "ticket",
+        "project",
+        "summary",
+        "expected",
+        "near_miss"
+      ],
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
-        "ticket": { "type": "string", "pattern": "^[A-Z][A-Z0-9]+-[0-9]+$" },
-        "project": { "type": "string" },
-        "labels": { "type": "array", "items": { "type": "string" } },
-        "summary": { "type": "string", "minLength": 10, "maxLength": 400 },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "ticket": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9]+-[0-9]+$"
+        },
+        "project": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 400
+        },
         "expected": {
           "oneOf": [
-            { "type": "object", "additionalProperties": false, "required": ["agent"], "properties": { "agent": { "type": "string", "pattern": "^[a-z0-9-]+-agent$" } } },
-            { "type": "object", "additionalProperties": false, "required": ["ask"], "properties": { "ask": { "const": true } } },
-            { "type": "object", "additionalProperties": false, "required": ["no_action"], "properties": { "no_action": { "const": true } } }
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "agent"
+              ],
+              "properties": {
+                "agent": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9-]+-agent$"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "ask"
+              ],
+              "properties": {
+                "ask": {
+                  "const": true
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "no_action"
+              ],
+              "properties": {
+                "no_action": {
+                  "const": true
+                }
+              }
+            }
           ]
         },
-        "near_miss": { "type": "boolean" },
-        "tags": { "type": "array", "items": { "type": "string" } }
+        "near_miss": {
+          "type": "boolean"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Evaluadores de episodio (FR-031): herramientas permitidas y requeridas, patrón del mensaje final y recibos esperados.",
+          "properties": {
+            "tools_allowed": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "tools_required": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "final_pattern": {
+              "type": "string",
+              "minLength": 1
+            },
+            "receipts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          }
+        }
       }
     }
   }
