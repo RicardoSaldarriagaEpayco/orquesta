@@ -62,3 +62,21 @@ class ModelNotAllowed(OrquestaError):
 
     def fields(self) -> dict[str, object]:
         return {"provider": self.provider, "model": self.model}
+
+
+class ProviderNotAllowed(OrquestaError):
+    def __init__(self, provider: str) -> None:
+        self.provider = provider
+        super().__init__(f"el proveedor {provider} no está en la allowlist del tenant")
+
+    def fields(self) -> dict[str, object]:
+        return {"provider": self.provider}
+
+
+class ProviderError(OrquestaError):
+    def __init__(self, provider: str, reason: str) -> None:
+        self.provider, self.reason = provider, reason
+        super().__init__(f"{provider}: {reason}")
+
+    def fields(self) -> dict[str, object]:
+        return {"provider": self.provider, "reason": self.reason}
