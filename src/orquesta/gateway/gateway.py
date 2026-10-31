@@ -5,7 +5,7 @@ from typing import Literal, Protocol
 
 from pydantic import BaseModel, Field
 
-from orquesta.errors import ModelNotAllowed, ProviderNotAllowed
+from orquesta.errors import BudgetExceeded, ModelNotAllowed, ProviderNotAllowed
 from orquesta.gateway.provider import ModelProvider, ModelRequest, ModelResponse
 
 
@@ -37,6 +37,18 @@ class Allowlist:
         return any(fnmatchcase(f"{provider}/{model}", p) for p in self.patterns)
 
 
+class Budget:
+    def __init__(self, limit_usd: float | None = None) -> None:
+        self.limit_usd = limit_usd
+        self.spent_usd = 0.0
+
+    def exhausted(self) -> bool:
+        return self.limit_usd is not None and self.spent_usd >= self.limit_usd
+
+    def add(self, cost: float) -> None:
+        self.spent_usd += cost
+
+
 class Gateway:
     def __init__(
         self,
@@ -45,8 +57,10 @@ class Gateway:
         actor: str,
         tenant: str,
         clock: Callable[[], float] = time.monotonic,
+        budget: Budget | None = None,
     ) -> None:
         self.allowlist, self.sink, self.actor, self.tenant, self.clock = allowlist, sink, actor, tenant, clock
+        self.budget = budget or Budget()
 
     def complete(self, provider: ModelProvider, request: ModelRequest) -> ModelResponse:
         name = provider.name()
@@ -56,11 +70,15 @@ class Gateway:
             raise ModelNotAllowed(name, request.model)
         refs = {"case_id": request.metadata["case_id"]} if "case_id" in request.metadata else {}
         started = self.clock()
+        if self.budget.exhausted():
+            self._record(name, request.model, started, None, refs, "denied: budget")
+            raise BudgetExceeded(self.budget.limit_usd or 0.0, self.budget.spent_usd)
         try:
             response = provider.complete(request)
         except Exception as error:
             self._record(name, request.model, started, None, refs, f"error: {type(error).__name__}")
             raise
+        self.budget.add(response.cost_usd)
         self._record(name, request.model, started, response.cost_usd, refs, f"ok: {response.stop_reason}")
         return response
 

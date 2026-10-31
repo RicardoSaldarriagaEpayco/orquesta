@@ -201,7 +201,7 @@ def _eval_run(args: argparse.Namespace) -> int:
     workspace = Workspace(args.workspace)
     sha = workspace.resolve(args.sha)
     loaded = suite.load(workspace, sha, args.suite)
-    allowlist, default = load_models(workspace, sha)
+    models = load_models(workspace, sha)
     if args.provider == "anthropic":
         raise ProviderError("anthropic", "el proveedor real llega con T064, después de la autorización (T026)")
     answers = yaml.safe_load(Path(args.answers).read_text(encoding="utf-8")) if args.answers else {}
@@ -210,7 +210,9 @@ def _eval_run(args: argparse.Namespace) -> int:
     from orquesta.audit.sink import ModelCallSink, tenant, writer_from_env
 
     sink = ModelCallSink(writer_from_env(), sha, sha)
-    gateway = Gateway(allowlist, sink, actor=resolve_actor(), tenant=tenant(workspace, sha))
+    gateway = Gateway(
+        models.allowlist, sink, actor=resolve_actor(), tenant=tenant(workspace, sha), budget=models.budget()
+    )
     result = run_suite(loaded, resolve(workspace, sha), gateway, provider, model, sha)
     if args.record:
         baseline = EvalRun.model_validate_json(Path(args.baseline).read_text()) if args.baseline else None

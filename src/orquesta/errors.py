@@ -109,3 +109,14 @@ class AuditUnavailable(OrquestaError):
 
     def __init__(self, reason: str) -> None:
         super().__init__(f"auditoría no disponible: {reason}")
+
+
+class BudgetExceeded(OrquestaError):
+    exit_code = 10
+
+    def __init__(self, limit_usd: float, spent_usd: float) -> None:
+        self.limit_usd, self.spent_usd = limit_usd, spent_usd
+        super().__init__(f"presupuesto agotado: {spent_usd:.6f} de {limit_usd:.6f} USD")
+
+    def fields(self) -> dict[str, object]:
+        return {"limit_usd": self.limit_usd, "spent_usd": self.spent_usd}

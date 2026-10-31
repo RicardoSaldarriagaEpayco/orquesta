@@ -40,6 +40,7 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "SIM"]
 "src/orquesta/identity.py" = ["S603", "S607"]
 "src/orquesta/policy/load.py" = ["S506", "S603", "S607"]
 "src/orquesta/audit/chain.py" = ["S608"]
+"src/orquesta/gateway/openai_compatible.py" = ["S310"]
 "scripts/**" = ["S603", "S607"]
 
 [tool.pytest.ini_options]

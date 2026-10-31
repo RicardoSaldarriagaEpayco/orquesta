@@ -15,8 +15,8 @@
 
 ## Cierre de F1
 
-- [ ] N009 [P] [US3] Segundo proveedor real detrás de `ModelProvider`: `OpenAICompatibleProvider` para servidores con la API de OpenAI (vLLM, Ollama, gateways privados), probado sin red (FR-039a)
-- [ ] N010 [US3] Tope de costo: presupuesto por tenant y por corrida en el gateway; al agotarse, `BudgetExceeded` antes de llamar, con evento auditado (FR-039)
+- [x] N009 [P] [US3] Segundo proveedor real detrás de `ModelProvider`: `OpenAICompatibleProvider` para servidores con la API de OpenAI (vLLM, Ollama, gateways privados), probado sin red (FR-039a)
+- [x] N010 [US3] Tope de costo: presupuesto por tenant y por corrida en el gateway; al agotarse, `BudgetExceeded` antes de llamar, con evento auditado (FR-039)
 - [ ] N011 [P] [US5] `EvidenceReceipt`: contrato JSON Schema, firma Ed25519 con llave del operador, `orquesta receipt sign|verify`, vencimiento por cambio de insumos (FR-046)
 - [ ] N012 [US5] `pr-without-receipt` acepta recibos firmados vigentes además del marcador local
 - [ ] N013 [P] [US4] Evaluadores restantes de FR-031: uso de herramientas, patrón en el mensaje final y recibos esperados, con métricas propias

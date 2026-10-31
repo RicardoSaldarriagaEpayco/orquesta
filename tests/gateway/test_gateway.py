@@ -107,3 +107,33 @@ def test_provider_key_never_reaches_events_or_logs(sink, caplog) -> None:
         gateway(sink).complete(ExplodingProvider(), request(model="otro"))
     everything = json.dumps([e.model_dump() for e in sink.events]) + caplog.text
     assert CANARY_KEY not in everything
+
+
+def test_budget_stops_calls_once_spent_and_records_the_denial(sink) -> None:
+    from orquesta.errors import BudgetExceeded
+    from orquesta.gateway.gateway import Budget
+    from orquesta.gateway.provider import ModelResponse, Usage
+
+    class Paid(FakeProvider):
+        def complete(self, request):
+            response = super().complete(request)
+            return ModelResponse(
+                text=response.text, stop_reason="end_turn", usage=Usage(input_tokens=1, output_tokens=1), cost_usd=0.6
+            )
+
+    gw = Gateway(Allowlist(["fake/*"]), sink, actor="someone", tenant="acme", clock=lambda: 0.0, budget=Budget(1.0))
+    provider = Paid({"case-1": "agent: reviewer"})
+    gw.complete(provider, request())
+    gw.complete(provider, request())
+    with pytest.raises(BudgetExceeded) as error:
+        gw.complete(provider, request())
+    assert error.value.exit_code == 10 and error.value.spent_usd == pytest.approx(1.2)
+    assert len(provider.calls) == 2
+    assert [e.decision for e in sink.events] == ["ok: end_turn", "ok: end_turn", "denied: budget"]
+
+
+def test_without_budget_there_is_no_limit(sink) -> None:
+    gw = Gateway(Allowlist(["fake/*"]), sink, actor="someone", tenant="acme", clock=lambda: 0.0)
+    for _ in range(5):
+        gw.complete(FakeProvider({"case-1": "x"}), request())
+    assert len(sink.events) == 5
