@@ -26,10 +26,11 @@ class RequestUnreadable(OrquestaError):
 def load_rules(workspace: Workspace, sha: str) -> tuple[Rules, str]:
     try:
         full = workspace.resolve(sha)
-        policy = yaml.safe_load(workspace.read(full, "policy.yaml"))
-        manifest = yaml.safe_load(workspace.read(full, "workspace.yaml"))
+        loader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+        policy = yaml.load(workspace.read(full, "policy.yaml"), Loader=loader)
+        manifest = yaml.load(workspace.read(full, "workspace.yaml"), Loader=loader)
         readonly = [str(repo["name"]) for repo in manifest["repos"] if repo.get("write") is False]
-        return Rules.build(str(workspace.path.resolve()), policy, readonly), full
+        return Rules.build(main_checkout(str(workspace.path.resolve())), policy, readonly), full
     except ShaNotApproved as error:
         raise RulesUnreadable(str(error)) from error
     except (FileNotFoundError, yaml.YAMLError, KeyError, TypeError, AttributeError, ValueError) as error:
@@ -42,6 +43,13 @@ def _git(path: str, *args: str) -> str:
     except (OSError, subprocess.TimeoutExpired):
         return ""
     return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def main_checkout(path: str) -> str:
+    common = _git(path, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    if common and os.path.basename(common.rstrip("/")) == ".git":
+        return os.path.dirname(common.rstrip("/"))
+    return path
 
 
 @dataclass

@@ -59,7 +59,7 @@ def run(text: str, rules: Rules | None = None) -> list[Outcome]:
     env = FixtureEnvironment(env_data["workspace_name"], env_data["repos"], env_data.get("files") or {})
     outcomes = []
     for case in data["cases"]:
-        request = PolicyRequest.model_validate({"entrypoint": "claude-wsl", "actor": "fixture", **case["request"]})
+        request = PolicyRequest.from_dict({"entrypoint": "claude-wsl", "actor": "fixture", **case["request"]})
         decision = evaluate(request, rules, env, "0" * 40)
         outcomes.append(
             Outcome(case["name"], case["expect"], {"verdict": decision.verdict, "rule_id": decision.rule_id})

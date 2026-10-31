@@ -4,27 +4,50 @@ from dataclasses import dataclass
 from fnmatch import fnmatch
 from typing import Literal, Protocol
 
-from pydantic import BaseModel, ConfigDict, Field
-
 Verdict = Literal["allow", "deny", "ask"]
-Entrypoint = Literal["claude-wsl", "claude-desktop", "ci", "platform"]
 
 
-class PolicyRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+ENTRYPOINTS = ("claude-wsl", "claude-desktop", "ci", "platform")
 
-    entrypoint: Entrypoint
-    tool: str = Field(min_length=1)
+
+class InvalidRequest(ValueError):
+    pass
+
+
+@dataclass(frozen=True)
+class PolicyRequest:
+    entrypoint: str
+    tool: str
     input: dict[str, object]
-    cwd: str = Field(min_length=1)
-    actor: str = Field(min_length=1)
+    cwd: str
+    actor: str
+
+    @classmethod
+    def from_dict(cls, data: object) -> "PolicyRequest":
+        if not isinstance(data, dict):
+            raise InvalidRequest("PolicyRequest debe ser un objeto JSON")
+        extra = set(data) - {"entrypoint", "tool", "input", "cwd", "actor"}
+        if extra:
+            raise InvalidRequest(f"campos desconocidos: {', '.join(sorted(extra))}")
+        if data.get("entrypoint") not in ENTRYPOINTS:
+            raise InvalidRequest(f"entrypoint debe ser uno de {', '.join(ENTRYPOINTS)}")
+        for name in ("tool", "cwd", "actor"):
+            if not isinstance(data.get(name), str) or not data[name]:
+                raise InvalidRequest(f"{name} debe ser un texto no vacío")
+        if not isinstance(data.get("input"), dict):
+            raise InvalidRequest("input debe ser un objeto")
+        return cls(data["entrypoint"], data["tool"], data["input"], data["cwd"], data["actor"])
 
 
-class PolicyDecision(BaseModel):
+@dataclass(frozen=True)
+class PolicyDecision:
     verdict: Verdict
     rule_id: str
     reason: str
     policy_sha: str
+
+    def to_dict(self) -> dict[str, str]:
+        return {"verdict": self.verdict, "rule_id": self.rule_id, "reason": self.reason, "policy_sha": self.policy_sha}
 
 
 @dataclass(frozen=True)

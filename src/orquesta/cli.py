@@ -2,25 +2,15 @@ import argparse
 import json
 import os
 import sys
+import time
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
-from pydantic import ValidationError
-
 from orquesta.errors import AuditUnavailable, OrquestaError, ProviderError
-from orquesta.evals import promotion, suite
-from orquesta.evals.run import EvalRun
-from orquesta.evals.run import run as run_suite
-from orquesta.gateway.config import load_models
-from orquesta.gateway.gateway import Gateway
-from orquesta.gateway.provider import FakeProvider
 from orquesta.identity import resolve_actor
 from orquesta.policy.engine import evaluate
-from orquesta.policy.fixtures import run as run_fixtures
-from orquesta.policy.load import GitEnvironment, RequestUnreadable, load_rules
-from orquesta.policy.model import PolicyRequest
-from orquesta.registry.lock import lock, verify
-from orquesta.registry.resolve import resolve
+from orquesta.policy.load import GitEnvironment, RequestUnreadable, load_rules, main_checkout
+from orquesta.policy.model import InvalidRequest, PolicyRequest
 from orquesta.workspace import Workspace
 
 
@@ -46,6 +36,9 @@ def _parser() -> argparse.ArgumentParser:
     evaluate = policy.add_parser("eval", parents=[common])
     evaluate.add_argument("--workspace", required=True)
     evaluate.add_argument("--sha", required=True)
+    evaluate.add_argument(
+        "--hook", action="store_true", help="entrada y salida en el formato PreToolUse de Claude Code"
+    )
     fixture = policy.add_parser("test", parents=[common], help="corre un fixture de paridad con las reglas del SHA")
     fixture.add_argument("--workspace", required=True)
     fixture.add_argument("--sha", required=True)
@@ -97,6 +90,7 @@ def _registry_event(args: argparse.Namespace, workspace: Workspace, count: int, 
 
 def _registry_list(args: argparse.Namespace) -> int:
     from orquesta.audit.sink import Stopwatch
+    from orquesta.registry.resolve import resolve
 
     watch = Stopwatch()
     workspace = Workspace(args.workspace)
@@ -112,6 +106,7 @@ def _registry_list(args: argparse.Namespace) -> int:
 
 def _registry_lock(args: argparse.Namespace) -> int:
     from orquesta.audit.sink import Stopwatch
+    from orquesta.registry.lock import lock
 
     watch = Stopwatch()
     workspace = Workspace(args.workspace)
@@ -122,38 +117,67 @@ def _registry_lock(args: argparse.Namespace) -> int:
 
 
 def _registry_verify(args: argparse.Namespace) -> int:
+    from orquesta.registry.lock import verify
+
     approved = verify(Workspace(args.workspace), Path(args.lock))
     print(f"lock de {approved.sha[:7]} coincide: {len(approved.lock)} activos")
     return 0
 
 
-def _policy_eval(args: argparse.Namespace) -> int:
+def _read_request(hook: bool) -> PolicyRequest:
     try:
-        request = PolicyRequest.model_validate_json(sys.stdin.read())
-    except ValidationError as error:
-        raise RequestUnreadable(error.errors()[0]["msg"]) from error
-    from orquesta.audit.sink import Stopwatch, tenant, writer_from_env
+        data = json.loads(sys.stdin.read())
+        if hook:
+            if not isinstance(data, dict):
+                raise InvalidRequest("la entrada del hook debe ser un objeto JSON")
+            data = {
+                "entrypoint": os.environ.get("ORQUESTA_ENTRYPOINT", "claude-wsl"),
+                "tool": data.get("tool_name", ""),
+                "input": data.get("tool_input") or {},
+                "cwd": data.get("cwd") or os.getcwd(),
+                "actor": resolve_actor(),
+            }
+        return PolicyRequest.from_dict(data)
+    except (json.JSONDecodeError, InvalidRequest) as error:
+        raise RequestUnreadable(str(error)) from error
 
-    watch = Stopwatch()
+
+def _policy_eval(args: argparse.Namespace) -> int:
+    request = _read_request(args.hook)
+    started = time.monotonic()
     workspace = Workspace(args.workspace)
     rules, sha = load_rules(workspace, args.sha)
-    decision = evaluate(request, rules, GitEnvironment(str(workspace.path.resolve())), sha)
-    _record(
-        writer_from_env(),
-        tenant=tenant(workspace, sha),
-        kind="policy_decision",
-        policy_sha=sha,
-        asset_set_sha=sha,
-        tools=[request.tool],
-        decision=f"{decision.verdict}:{decision.rule_id}",
-        latency_ms=watch.ms,
-        refs={"entrypoint": request.entrypoint, "rule_id": decision.rule_id},
-    )
-    print(decision.model_dump_json())
+    decision = evaluate(request, rules, GitEnvironment(main_checkout(str(workspace.path.resolve()))), sha)
+    if os.environ.get("ORQUESTA_AUDIT_DSN"):
+        from orquesta.audit.sink import tenant, writer_from_env
+
+        _record(
+            writer_from_env(),
+            tenant=tenant(workspace, sha),
+            kind="policy_decision",
+            policy_sha=sha,
+            asset_set_sha=sha,
+            tools=[request.tool],
+            decision=f"{decision.verdict}:{decision.rule_id}",
+            latency_ms=max(0, round((time.monotonic() - started) * 1000)),
+            refs={"entrypoint": request.entrypoint, "rule_id": decision.rule_id},
+        )
+    if not args.hook:
+        print(json.dumps(decision.to_dict(), ensure_ascii=False))
+    elif decision.verdict != "allow":
+        reason = f"{decision.reason} [{decision.rule_id}]"
+        output = {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": decision.verdict,
+            "permissionDecisionReason": reason,
+        }
+        print(json.dumps({"hookSpecificOutput": output}, ensure_ascii=False))
     return 0
 
 
 def _policy_test(args: argparse.Namespace) -> int:
+    from orquesta.policy.fixtures import run as run_fixtures
+
     rules, _ = load_rules(Workspace(args.workspace), args.sha)
     outcomes = run_fixtures(Path(args.fixtures).read_text(encoding="utf-8"), rules)
     failed = [o for o in outcomes if not o.ok]
@@ -165,6 +189,14 @@ def _policy_test(args: argparse.Namespace) -> int:
 
 def _eval_run(args: argparse.Namespace) -> int:
     import yaml
+
+    from orquesta.evals import promotion, suite
+    from orquesta.evals.run import EvalRun
+    from orquesta.evals.run import run as run_suite
+    from orquesta.gateway.config import load_models
+    from orquesta.gateway.gateway import Gateway
+    from orquesta.gateway.provider import FakeProvider
+    from orquesta.registry.resolve import resolve
 
     workspace = Workspace(args.workspace)
     sha = workspace.resolve(args.sha)

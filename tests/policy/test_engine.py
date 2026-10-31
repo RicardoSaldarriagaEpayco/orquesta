@@ -137,3 +137,37 @@ def test_policy_test_runs_a_tenant_fixture_with_the_sha_rules(tenant, tmp_path, 
     args = ["policy", "test", "--workspace", str(repo.path), "--sha", sha, "--fixtures", str(fixture)]
     assert main(args) == code
     assert ("2 de 2" if code == 0 else "1 de 2") in capsys.readouterr().out
+
+
+def test_a_linked_worktree_uses_the_main_checkout_as_root(tenant, tmp_path, monkeypatch, capsys) -> None:
+    repo, sha = tenant
+    linked = tmp_path / "linked"
+    repo.git("worktree", "add", "-q", "--detach", str(linked), sha)
+    target = f"{repo.path}/infra/a"
+    code, out, _ = run(monkeypatch, capsys, ["--workspace", str(linked), "--sha", sha], request(target))
+    assert code == 0 and json.loads(out)["rule_id"] == "readonly-repo"
+
+
+def test_hook_mode_speaks_pre_tool_use(tenant, monkeypatch, capsys) -> None:
+    repo, sha = tenant
+    payload = {"tool_name": "Write", "tool_input": {"file_path": f"{repo.path}/infra/a"}, "cwd": str(repo.path)}
+    code, out, _ = run(
+        monkeypatch, capsys, ["--workspace", str(repo.path), "--sha", sha, "--hook"], json.dumps(payload)
+    )
+    decision = json.loads(out)["hookSpecificOutput"]
+    assert (
+        code == 0
+        and decision["permissionDecision"] == "deny"
+        and "[readonly-repo]" in decision["permissionDecisionReason"]
+    )
+    payload["tool_input"]["file_path"] = f"{repo.path}/shop/a"
+    code, out, _ = run(
+        monkeypatch, capsys, ["--workspace", str(repo.path), "--sha", sha, "--hook"], json.dumps(payload)
+    )
+    assert code == 0 and out == ""
+
+
+def test_hook_mode_with_unreadable_payload_exits_with_2(tenant, monkeypatch, capsys) -> None:
+    repo, sha = tenant
+    code, out, _ = run(monkeypatch, capsys, ["--workspace", str(repo.path), "--sha", sha, "--hook"], "[1, 2]")
+    assert code == 2 and out == ""
