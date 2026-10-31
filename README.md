@@ -27,6 +27,9 @@ echo '{"tool_name": "Write", "tool_input": {"file_path": "/repo/a"}, "cwd": "/re
   uv run orquesta policy eval --workspace ../mi-workspace --sha origin/main --hook
 ```
 
+`examples/workspace/` es un workspace de ejemplo genérico y `examples/demo.sh` recorre registro, política y evaluación
+de punta a punta sobre una copia temporal.
+
 Lo que el workspace del tenant necesita y el formato de cada archivo está en [`contracts/`](contracts/). Los comandos,
 códigos de salida y variables de entorno, en [`contracts/cli.md`](contracts/cli.md).
 
@@ -37,6 +40,7 @@ Para la auditoría: `AUDIT_OWNER_PASSWORD=… AUDIT_WRITER_PASSWORD=… docker c
 
 - [Arquitectura](docs/architecture.md) y [roadmap](docs/roadmap.md)
 - [Spec](specs/001-nucleo/spec.md) y [tareas](specs/001-nucleo/tasks.md)
+- [Adaptador de Claude Code](adapters/claude-code/README.md)
 - [Constitución](.specify/memory/constitution.md) y [ADRs](docs/adr/)
 
 ## Reglas del repo

@@ -1,0 +1,17 @@
+version: 1
+defaults:
+  owner: platform-team
+  source: workspace
+  classification: internal
+  egress: []
+  external_effects: []
+  evals: []
+  expires: null
+  approvals: []
+assets:
+  - id: agent/reviewer-agent
+    evals: [routing]
+  - id: agent/builder-agent
+    evals: [routing]
+  - id: skill/ship
+    external_effects: [push, pr]

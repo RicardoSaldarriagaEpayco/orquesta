@@ -1,0 +1,12 @@
+version: 1
+tenant: example
+repos:
+  - name: shop-web
+    agent: reviewer-agent
+    write: true
+  - name: payments-api
+    agent: builder-agent
+    write: true
+  - name: infra-gitops
+    agent: null
+    write: false

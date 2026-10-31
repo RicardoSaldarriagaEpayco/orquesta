@@ -1,0 +1,270 @@
+suite: routing
+runs: 3
+engine: claude-code
+timeout_s: 120
+allowed_tools:
+- Read
+- Grep
+- Glob
+margin: 0.05
+cases:
+- id: web-0
+  ticket: WEB-100
+  project: WEB
+  labels:
+  - frontend
+  summary: El botón de pagar no se ve en móvil.
+  expected:
+    agent: reviewer-agent
+  near_miss: false
+- id: web-1
+  ticket: WEB-101
+  project: WEB
+  labels:
+  - frontend
+  summary: La página de carrito tarda en cargar.
+  expected:
+    agent: reviewer-agent
+  near_miss: false
+- id: web-2
+  ticket: WEB-102
+  project: WEB
+  labels:
+  - frontend
+  summary: El formulario no valida el correo.
+  expected:
+    agent: reviewer-agent
+  near_miss: false
+- id: web-3
+  ticket: WEB-103
+  project: WEB
+  labels:
+  - frontend
+  summary: Texto cortado en el resumen de compra.
+  expected:
+    agent: reviewer-agent
+  near_miss: false
+- id: web-4
+  ticket: WEB-104
+  project: WEB
+  labels:
+  - frontend
+  summary: El modo oscuro rompe el pie de página.
+  expected:
+    agent: reviewer-agent
+  near_miss: false
+- id: web-5
+  ticket: WEB-105
+  project: WEB
+  labels:
+  - frontend
+  summary: El selector de idioma no guarda la opción.
+  expected:
+    agent: reviewer-agent
+  near_miss: false
+- id: web-6
+  ticket: WEB-106
+  project: WEB
+  labels:
+  - frontend
+  summary: La galería de productos no hace scroll.
+  expected:
+    agent: reviewer-agent
+  near_miss: false
+- id: web-7
+  ticket: WEB-107
+  project: WEB
+  labels:
+  - frontend
+  summary: El banner tapa el menú en tablets.
+  expected:
+    agent: reviewer-agent
+  near_miss: false
+- id: web-8
+  ticket: WEB-108
+  project: WEB
+  labels:
+  - frontend
+  summary: El checkout muestra el total sin impuestos.
+  expected:
+    agent: reviewer-agent
+  near_miss: false
+- id: web-9
+  ticket: WEB-109
+  project: WEB
+  labels:
+  - frontend
+  summary: El ícono de ayuda no abre el chat.
+  expected:
+    agent: reviewer-agent
+  near_miss: false
+- id: api-0
+  ticket: PAY-200
+  project: PAY
+  labels:
+  - backend
+  summary: El webhook de confirmación responde 500.
+  expected:
+    agent: builder-agent
+  near_miss: false
+- id: api-1
+  ticket: PAY-201
+  project: PAY
+  labels:
+  - backend
+  summary: Pagos duplicados al reintentar.
+  expected:
+    agent: builder-agent
+  near_miss: false
+- id: api-2
+  ticket: PAY-202
+  project: PAY
+  labels:
+  - backend
+  summary: La API de reembolsos ignora el monto parcial.
+  expected:
+    agent: builder-agent
+  near_miss: false
+- id: api-3
+  ticket: PAY-203
+  project: PAY
+  labels:
+  - backend
+  summary: Timeout al consultar el estado de un pago.
+  expected:
+    agent: builder-agent
+  near_miss: false
+- id: api-4
+  ticket: PAY-204
+  project: PAY
+  labels:
+  - backend
+  summary: El token de acceso vence antes de tiempo.
+  expected:
+    agent: builder-agent
+  near_miss: false
+- id: api-5
+  ticket: PAY-205
+  project: PAY
+  labels:
+  - backend
+  summary: Error de redondeo en montos con decimales.
+  expected:
+    agent: builder-agent
+  near_miss: false
+- id: api-6
+  ticket: PAY-206
+  project: PAY
+  labels:
+  - backend
+  summary: La conciliación omite pagos de medianoche.
+  expected:
+    agent: builder-agent
+  near_miss: false
+- id: api-7
+  ticket: PAY-207
+  project: PAY
+  labels:
+  - backend
+  summary: El endpoint de clientes no pagina.
+  expected:
+    agent: builder-agent
+  near_miss: false
+- id: api-8
+  ticket: PAY-208
+  project: PAY
+  labels:
+  - backend
+  summary: Falta validar la moneda del pago.
+  expected:
+    agent: builder-agent
+  near_miss: false
+- id: api-9
+  ticket: PAY-209
+  project: PAY
+  labels:
+  - backend
+  summary: Los logs registran el número de documento.
+  expected:
+    agent: builder-agent
+  near_miss: false
+- id: ask-0
+  ticket: WEB-300
+  project: WEB
+  labels: []
+  summary: Revisar el flujo de pago completo.
+  expected:
+    ask: true
+  near_miss: true
+- id: ask-1
+  ticket: WEB-301
+  project: WEB
+  labels: []
+  summary: Mejorar la experiencia de compra.
+  expected:
+    ask: true
+  near_miss: true
+- id: ask-2
+  ticket: WEB-302
+  project: WEB
+  labels: []
+  summary: Algo falla con los pagos de la tienda.
+  expected:
+    ask: true
+  near_miss: true
+- id: ask-3
+  ticket: WEB-303
+  project: WEB
+  labels: []
+  summary: Actualizar dependencias del proyecto.
+  expected:
+    ask: true
+  near_miss: true
+- id: ask-4
+  ticket: WEB-304
+  project: WEB
+  labels: []
+  summary: Problema reportado por un cliente sin detalle.
+  expected:
+    ask: true
+  near_miss: true
+- id: out-0
+  ticket: OPS-400
+  project: OPS
+  labels: []
+  summary: Renovar la licencia de la herramienta de diseño.
+  expected:
+    no_action: true
+  near_miss: false
+- id: out-1
+  ticket: OPS-401
+  project: OPS
+  labels: []
+  summary: Organizar la reunión trimestral del equipo.
+  expected:
+    no_action: true
+  near_miss: false
+- id: out-2
+  ticket: OPS-402
+  project: OPS
+  labels: []
+  summary: Pedir acceso a la VPN para un nuevo integrante.
+  expected:
+    no_action: true
+  near_miss: false
+- id: out-3
+  ticket: OPS-403
+  project: OPS
+  labels: []
+  summary: Cambiar el logo de la presentación comercial.
+  expected:
+    no_action: true
+  near_miss: false
+- id: out-4
+  ticket: OPS-404
+  project: OPS
+  labels: []
+  summary: Revisar facturas del proveedor de oficina.
+  expected:
+    no_action: true
+  near_miss: false

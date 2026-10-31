@@ -1,0 +1,17 @@
+version: 1
+protected_branches: [main]
+local_branches: ['qa/*']
+worktree_root: workspace/
+spec_root: workspace/specs/
+ai_attribution_patterns:
+  - 'co-authored-by:[^\n]*\b(claude|anthropic)\b'
+  - 'generated with \[?claude code'
+pr_requires_receipt: true
+models:
+  default: anthropic/claude-sonnet-5-5
+  allow:
+    - anthropic/claude-sonnet-5-5
+    - fake/*
+  budget_usd: 1.0
+  prices:
+    claude-sonnet-5-5: [3, 15]
