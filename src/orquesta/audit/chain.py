@@ -63,15 +63,15 @@ def append(conn: Connection, key: bytes, record: AuditRecord) -> int:
 
 
 def verify(conn: Connection, key: bytes) -> int:
-    prev, last_seq, last_at, count = GENESIS, 0, None, 0
-    cursor = conn.execute(f"SELECT seq, at, {', '.join(COLUMNS)}, prev_mac, mac FROM audit_events ORDER BY seq")
+    prev, last_seq, count = GENESIS, 0, 0
+    cursor = conn.execute(f"SELECT seq, {', '.join(COLUMNS)}, prev_mac, mac FROM audit_events ORDER BY seq")
     for row in cursor:
-        seq, at = row[0], row[1]
-        values = dict(zip(COLUMNS, row[2:-2], strict=True))
+        seq = row[0]
+        values = dict(zip(COLUMNS, row[1:-2], strict=True))
         stored_prev, stored_mac = bytes(row[-2]), bytes(row[-1])
-        if seq <= last_seq or (last_at is not None and at < last_at):
+        if seq <= last_seq:
             raise AuditChainBroken(seq)
         if stored_prev != prev or not hmac.compare_digest(stored_mac, mac(key, stored_prev, values)):
             raise AuditChainBroken(seq)
-        prev, last_seq, last_at, count = stored_mac, seq, at, count + 1
+        prev, last_seq, count = stored_mac, seq, count + 1
     return count
