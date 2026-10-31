@@ -6,7 +6,13 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from orquesta.errors import OrquestaError
+from orquesta.errors import OrquestaError, ProviderError
+from orquesta.evals import promotion, suite
+from orquesta.evals.run import EvalRun
+from orquesta.evals.run import run as run_suite
+from orquesta.gateway.config import load_models
+from orquesta.gateway.gateway import Gateway
+from orquesta.gateway.provider import FakeProvider
 from orquesta.identity import resolve_actor
 from orquesta.policy.engine import evaluate
 from orquesta.policy.fixtures import run as run_fixtures
@@ -49,9 +55,14 @@ def _parser() -> argparse.ArgumentParser:
 
     evals = commands.add_parser("eval", help="suites de evaluación").add_subparsers(dest="action", required=True)
     run = evals.add_parser("run", parents=[common])
-    run.add_argument("--suite", required=True)
+    run.add_argument("--workspace", required=True)
+    run.add_argument("--suite", required=True, help="ruta de la suite dentro del workspace")
     run.add_argument("--sha", required=True)
     run.add_argument("--provider", choices=["fake", "anthropic"], required=True)
+    run.add_argument("--answers", help="tabla case_id -> respuesta del proveedor fake (YAML)")
+    run.add_argument("--model", help="modelo; por defecto models.default, o fake-routing con --provider fake")
+    run.add_argument("--baseline", help="EvalRun JSON de la línea base para comparar")
+    run.add_argument("--record", help="ruta donde escribir el PromotionRecord")
 
     return parser
 
@@ -103,12 +114,43 @@ def _policy_test(args: argparse.Namespace) -> int:
     return 1 if failed else 0
 
 
+class _MemorySink:
+    def __init__(self) -> None:
+        self.events: list[object] = []
+
+    def write(self, event: object) -> None:
+        self.events.append(event)
+
+
+def _eval_run(args: argparse.Namespace) -> int:
+    import yaml
+
+    workspace = Workspace(args.workspace)
+    sha = workspace.resolve(args.sha)
+    loaded = suite.load(workspace, sha, args.suite)
+    allowlist, default = load_models(workspace, sha)
+    if args.provider == "anthropic":
+        raise ProviderError("anthropic", "el proveedor real llega con T064, después de la autorización (T026)")
+    answers = yaml.safe_load(Path(args.answers).read_text(encoding="utf-8")) if args.answers else {}
+    provider = FakeProvider({str(k): str(v) for k, v in (answers or {}).items()})
+    model = args.model or "fake-routing"
+    gateway = Gateway(allowlist, _MemorySink(), actor=resolve_actor(), tenant="local")
+    result = run_suite(loaded, resolve(workspace, sha), gateway, provider, model, sha)
+    if args.record:
+        baseline = EvalRun.model_validate_json(Path(args.baseline).read_text()) if args.baseline else None
+        entry = promotion.record(result, baseline, loaded.margin, reviewer=resolve_actor())
+        Path(args.record).write_text(entry.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    print(result.model_dump_json(indent=2))
+    return 0
+
+
 HANDLERS: dict[tuple[str, str], Callable[[argparse.Namespace], int]] = {
     ("registry", "list"): _registry_list,
     ("registry", "lock"): _registry_lock,
     ("registry", "verify"): _registry_verify,
     ("policy", "eval"): _policy_eval,
     ("policy", "test"): _policy_test,
+    ("eval", "run"): _eval_run,
 }
 
 

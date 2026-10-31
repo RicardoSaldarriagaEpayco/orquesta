@@ -80,3 +80,14 @@ class ProviderError(OrquestaError):
 
     def fields(self) -> dict[str, object]:
         return {"provider": self.provider, "reason": self.reason}
+
+
+class SuiteInvalid(OrquestaError):
+    exit_code = 8
+
+    def __init__(self, suite: str, reason: str) -> None:
+        self.suite, self.reason = suite, reason
+        super().__init__(f"{suite}: {reason}")
+
+    def fields(self) -> dict[str, object]:
+        return {"suite": self.suite, "reason": self.reason}
