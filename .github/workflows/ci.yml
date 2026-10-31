@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+      - run: uv sync --frozen
+      - run: uv run ruff check
+      - run: uv run pytest
+
+  tenant-leak:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: términos del tenant fuera del repo
+        env:
+          TENANT_TERMS_FILE: ${{ secrets.TENANT_TERMS_FILE }}
+        run: |
+          terms="$RUNNER_TEMP/tenant-terms.txt"
+          printf '%s\n' "$TENANT_TERMS_FILE" > "$terms"
+          python3 scripts/tenant_leak.py --terms-file "$terms"
