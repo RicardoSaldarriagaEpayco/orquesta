@@ -39,6 +39,7 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "SIM"]
 "src/orquesta/workspace.py" = ["S603", "S607"]
 "src/orquesta/identity.py" = ["S603", "S607"]
 "src/orquesta/policy/load.py" = ["S603", "S607"]
+"src/orquesta/audit/chain.py" = ["S608"]
 "scripts/**" = ["S603", "S607"]
 
 [tool.pytest.ini_options]

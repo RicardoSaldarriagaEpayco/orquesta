@@ -91,3 +91,21 @@ class SuiteInvalid(OrquestaError):
 
     def fields(self) -> dict[str, object]:
         return {"suite": self.suite, "reason": self.reason}
+
+
+class AuditKeyInsecure(OrquestaError):
+    exit_code = 9
+
+    def __init__(self, path: str, reason: str) -> None:
+        self.path, self.reason = path, reason
+        super().__init__(f"llave de auditoría {path}: {reason}")
+
+    def fields(self) -> dict[str, object]:
+        return {"path": self.path, "reason": self.reason}
+
+
+class AuditUnavailable(OrquestaError):
+    exit_code = 9
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(f"auditoría no disponible: {reason}")

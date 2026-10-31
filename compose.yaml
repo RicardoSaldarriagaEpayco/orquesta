@@ -1,0 +1,17 @@
+services:
+  audit-db:
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    environment:
+      POSTGRES_USER: audit_owner
+      POSTGRES_DB: audit
+      POSTGRES_PASSWORD: ${AUDIT_OWNER_PASSWORD:?define AUDIT_OWNER_PASSWORD}
+      AUDIT_WRITER_PASSWORD: ${AUDIT_WRITER_PASSWORD:?define AUDIT_WRITER_PASSWORD}
+    ports:
+      - "127.0.0.1:${AUDIT_DB_PORT:-5433}:5432"
+    volumes:
+      - audit-data:/var/lib/postgresql/data
+      - ./docker/initdb/10-schema.sh:/docker-entrypoint-initdb.d/10-schema.sh:ro
+      - ./src/orquesta/audit/schema.sql:/docker-entrypoint-initdb.d/schema.sql.in:ro
+
+volumes:
+  audit-data:

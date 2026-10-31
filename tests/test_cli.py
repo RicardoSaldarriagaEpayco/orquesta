@@ -15,6 +15,7 @@ def no_identity(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     monkeypatch.setenv("PATH", str(bin_dir))
+    monkeypatch.setenv("ORQUESTA_AUDIT_KEY", str(tmp_path / "no-existe.key"))
     return bin_dir
 
 
@@ -42,15 +43,15 @@ def test_gh_without_session_is_not_identity(no_identity: Path, capsys: pytest.Ca
 
 def test_gh_session_is_identity(no_identity: Path, capsys: pytest.CaptureFixture[str]) -> None:
     fake_gh(no_identity, "Logged in to github.com account someone (keyring)", 0)
-    assert main(ARGS) == 1
-    assert "todavía no implementado" in capsys.readouterr().err
+    assert main(ARGS) == 9
+    assert "AuditKeyInsecure" in capsys.readouterr().err
 
 
 def test_actor_variable_is_identity(
     no_identity: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setenv("ORQUESTA_ACTOR", "someone")
-    assert main(ARGS) == 1
+    assert main(ARGS) == 9
     assert "IdentityMissing" not in capsys.readouterr().err
 
 

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "audit-event.schema.json",
+  "title": "AuditEvent",
+  "description": "Evento encadenado de la auditoría (FR-028 a FR-030). `refs` apunta a resultados; nunca contiene prompts ni secretos.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["seq", "at", "actor", "tenant", "kind", "policy_sha", "asset_set_sha", "tools", "decision", "latency_ms", "refs", "prev_mac", "mac"],
+  "properties": {
+    "seq": { "type": "integer", "minimum": 1 },
+    "at": { "type": "string", "format": "date-time" },
+    "actor": { "type": "string", "minLength": 1 },
+    "tenant": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "kind": { "enum": ["model_call", "policy_decision", "registry_resolve", "promotion", "eval_run"] },
+    "policy_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "asset_set_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "provider": { "type": ["string", "null"] },
+    "model": { "type": ["string", "null"] },
+    "tools": { "type": "array", "items": { "type": "string" } },
+    "decision": { "type": "string", "maxLength": 512 },
+    "latency_ms": { "type": "integer", "minimum": 0 },
+    "cost_usd": { "type": ["number", "null"], "minimum": 0 },
+    "refs": { "type": "object", "additionalProperties": { "type": "string", "maxLength": 512 } },
+    "prev_mac": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "mac": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  },
+  "allOf": [
+    { "if": { "properties": { "kind": { "const": "model_call" } } }, "then": { "properties": { "provider": { "type": "string" }, "model": { "type": "string" } } } }
+  ]
+}

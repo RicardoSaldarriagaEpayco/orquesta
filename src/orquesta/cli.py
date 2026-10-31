@@ -1,12 +1,13 @@
 import argparse
 import json
+import os
 import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from pydantic import ValidationError
 
-from orquesta.errors import OrquestaError, ProviderError
+from orquesta.errors import AuditUnavailable, OrquestaError, ProviderError
 from orquesta.evals import promotion, suite
 from orquesta.evals.run import EvalRun
 from orquesta.evals.run import run as run_suite
@@ -71,8 +72,36 @@ def _emit(payload: object) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
+def _record(writer: object, **fields: object) -> None:
+    if writer is not None:
+        from orquesta.audit.chain import AuditRecord
+
+        writer.write(AuditRecord(actor=resolve_actor(), **fields))
+
+
+def _registry_event(args: argparse.Namespace, workspace: Workspace, count: int, ms: int) -> None:
+    from orquesta.audit.sink import tenant, writer_from_env
+
+    sha = workspace.resolve(args.sha)
+    _record(
+        writer_from_env(),
+        tenant=tenant(workspace, sha),
+        kind="registry_resolve",
+        policy_sha=sha,
+        asset_set_sha=sha,
+        decision=f"registry {args.action}: {count} activos",
+        latency_ms=ms,
+        refs={"command": f"registry {args.action}"},
+    )
+
+
 def _registry_list(args: argparse.Namespace) -> int:
-    manifests = resolve(Workspace(args.workspace), args.sha)
+    from orquesta.audit.sink import Stopwatch
+
+    watch = Stopwatch()
+    workspace = Workspace(args.workspace)
+    manifests = resolve(workspace, args.sha)
+    _registry_event(args, workspace, len(manifests), watch.ms)
     if args.json:
         _emit([m.to_json() for m in manifests])
     else:
@@ -82,7 +111,13 @@ def _registry_list(args: argparse.Namespace) -> int:
 
 
 def _registry_lock(args: argparse.Namespace) -> int:
-    _emit(lock(Workspace(args.workspace), args.sha).to_json())
+    from orquesta.audit.sink import Stopwatch
+
+    watch = Stopwatch()
+    workspace = Workspace(args.workspace)
+    candidate = lock(workspace, args.sha)
+    _registry_event(args, workspace, len(candidate.lock), watch.ms)
+    _emit(candidate.to_json())
     return 0
 
 
@@ -97,9 +132,23 @@ def _policy_eval(args: argparse.Namespace) -> int:
         request = PolicyRequest.model_validate_json(sys.stdin.read())
     except ValidationError as error:
         raise RequestUnreadable(error.errors()[0]["msg"]) from error
+    from orquesta.audit.sink import Stopwatch, tenant, writer_from_env
+
+    watch = Stopwatch()
     workspace = Workspace(args.workspace)
     rules, sha = load_rules(workspace, args.sha)
     decision = evaluate(request, rules, GitEnvironment(str(workspace.path.resolve())), sha)
+    _record(
+        writer_from_env(),
+        tenant=tenant(workspace, sha),
+        kind="policy_decision",
+        policy_sha=sha,
+        asset_set_sha=sha,
+        tools=[request.tool],
+        decision=f"{decision.verdict}:{decision.rule_id}",
+        latency_ms=watch.ms,
+        refs={"entrypoint": request.entrypoint, "rule_id": decision.rule_id},
+    )
     print(decision.model_dump_json())
     return 0
 
@@ -114,14 +163,6 @@ def _policy_test(args: argparse.Namespace) -> int:
     return 1 if failed else 0
 
 
-class _MemorySink:
-    def __init__(self) -> None:
-        self.events: list[object] = []
-
-    def write(self, event: object) -> None:
-        self.events.append(event)
-
-
 def _eval_run(args: argparse.Namespace) -> int:
     import yaml
 
@@ -134,13 +175,32 @@ def _eval_run(args: argparse.Namespace) -> int:
     answers = yaml.safe_load(Path(args.answers).read_text(encoding="utf-8")) if args.answers else {}
     provider = FakeProvider({str(k): str(v) for k, v in (answers or {}).items()})
     model = args.model or "fake-routing"
-    gateway = Gateway(allowlist, _MemorySink(), actor=resolve_actor(), tenant="local")
+    from orquesta.audit.sink import ModelCallSink, tenant, writer_from_env
+
+    sink = ModelCallSink(writer_from_env(), sha, sha)
+    gateway = Gateway(allowlist, sink, actor=resolve_actor(), tenant=tenant(workspace, sha))
     result = run_suite(loaded, resolve(workspace, sha), gateway, provider, model, sha)
     if args.record:
         baseline = EvalRun.model_validate_json(Path(args.baseline).read_text()) if args.baseline else None
         entry = promotion.record(result, baseline, loaded.margin, reviewer=resolve_actor())
         Path(args.record).write_text(entry.model_dump_json(indent=2) + "\n", encoding="utf-8")
     print(result.model_dump_json(indent=2))
+    return 0
+
+
+def _audit_verify(args: argparse.Namespace) -> int:
+    import psycopg
+
+    from orquesta.audit.chain import verify as verify_chain
+    from orquesta.audit.key import load_key
+
+    key = load_key()
+    dsn = os.environ.get("ORQUESTA_AUDIT_DSN", "")
+    if not dsn:
+        raise AuditUnavailable("define ORQUESTA_AUDIT_DSN con la credencial de audit_writer")
+    with psycopg.connect(dsn) as conn:
+        count = verify_chain(conn, key)
+    print(f"cadena íntegra: {count} eventos")
     return 0
 
 
@@ -151,6 +211,7 @@ HANDLERS: dict[tuple[str, str], Callable[[argparse.Namespace], int]] = {
     ("policy", "eval"): _policy_eval,
     ("policy", "test"): _policy_test,
     ("eval", "run"): _eval_run,
+    ("audit", "verify"): _audit_verify,
 }
 
 
