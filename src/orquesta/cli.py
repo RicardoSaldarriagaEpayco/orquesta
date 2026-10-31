@@ -4,8 +4,14 @@ import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
+from pydantic import ValidationError
+
 from orquesta.errors import OrquestaError
 from orquesta.identity import resolve_actor
+from orquesta.policy.engine import evaluate
+from orquesta.policy.fixtures import run as run_fixtures
+from orquesta.policy.load import GitEnvironment, RequestUnreadable, load_rules
+from orquesta.policy.model import PolicyRequest
 from orquesta.registry.lock import lock, verify
 from orquesta.registry.resolve import resolve
 from orquesta.workspace import Workspace
@@ -33,6 +39,10 @@ def _parser() -> argparse.ArgumentParser:
     evaluate = policy.add_parser("eval", parents=[common])
     evaluate.add_argument("--workspace", required=True)
     evaluate.add_argument("--sha", required=True)
+    fixture = policy.add_parser("test", parents=[common], help="corre un fixture de paridad con las reglas del SHA")
+    fixture.add_argument("--workspace", required=True)
+    fixture.add_argument("--sha", required=True)
+    fixture.add_argument("--fixtures", required=True)
 
     audit = commands.add_parser("audit", help="cadena de auditoría").add_subparsers(dest="action", required=True)
     audit.add_parser("verify", parents=[common])
@@ -71,10 +81,34 @@ def _registry_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _policy_eval(args: argparse.Namespace) -> int:
+    try:
+        request = PolicyRequest.model_validate_json(sys.stdin.read())
+    except ValidationError as error:
+        raise RequestUnreadable(error.errors()[0]["msg"]) from error
+    workspace = Workspace(args.workspace)
+    rules, sha = load_rules(workspace, args.sha)
+    decision = evaluate(request, rules, GitEnvironment(str(workspace.path.resolve())), sha)
+    print(decision.model_dump_json())
+    return 0
+
+
+def _policy_test(args: argparse.Namespace) -> int:
+    rules, _ = load_rules(Workspace(args.workspace), args.sha)
+    outcomes = run_fixtures(Path(args.fixtures).read_text(encoding="utf-8"), rules)
+    failed = [o for o in outcomes if not o.ok]
+    for o in failed:
+        print(f"FALLA {o.name}: se esperaba {o.expected} y salió {o.actual}")
+    print(f"{len(outcomes) - len(failed)} de {len(outcomes)} casos coinciden")
+    return 1 if failed else 0
+
+
 HANDLERS: dict[tuple[str, str], Callable[[argparse.Namespace], int]] = {
     ("registry", "list"): _registry_list,
     ("registry", "lock"): _registry_lock,
     ("registry", "verify"): _registry_verify,
+    ("policy", "eval"): _policy_eval,
+    ("policy", "test"): _policy_test,
 }
 
 

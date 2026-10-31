@@ -1,0 +1,171 @@
+policy:
+  protected_branches: [develop, main]
+  local_branches: ["qa/*"]
+  worktree_root: platform/
+  spec_root: platform/specs/
+  ai_attribution_patterns:
+    - 'co-authored-by:[^\n]*\b(claude|anthropic)\b'
+    - 'generated with \[?claude code'
+  pr_requires_receipt: true
+readonly_repos: [infra-gitops]
+environment:
+  workspace: /home/dev/platform
+  workspace_name: platform-workspace
+  repos:
+    - path: /home/dev/platform
+      kind: workspace
+      branch: chore/docs
+      heads: {chore/docs: 1111111111111111111111111111111111111111}
+      receipts: [1111111111111111111111111111111111111111]
+    - path: /home/dev/platform/shop-plugin
+      kind: product
+      branch: feature/CARD-1
+      heads:
+        feature/CARD-1: 2222222222222222222222222222222222222222
+        feature/CARD-2: 3333333333333333333333333333333333333333
+      receipts: [2222222222222222222222222222222222222222]
+    - path: /home/dev/platform/infra-gitops
+      kind: product
+      branch: main
+    - path: /home/dev/elsewhere
+      kind: product
+      branch: main
+  files:
+    /tmp/body.md: "Cambios\n\nCo-Authored-By: Claude Opus <noreply@anthropic.com>\n"
+    /tmp/clean.md: "Cambios\n"
+cases:
+  - name: niega gh pr merge
+    request: {tool: Bash, input: {command: gh pr merge 5 --squash}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: deny, rule_id: self-merge}
+  - name: niega el merge por la API
+    request: {tool: Bash, input: {command: gh api -X PUT repos/acme/shop/pulls/5/merge}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: self-merge}
+  - name: niega git push a main
+    request: {tool: Bash, input: {command: git push origin main}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: deny, rule_id: push-protected}
+  - name: niega git push HEAD:develop desde otra carpeta con -C
+    request: {tool: Bash, input: {command: git -C shop-plugin push origin HEAD:refs/heads/develop}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: push-protected}
+  - name: niega git push sin rama si la actual es protegida
+    request: {tool: Bash, input: {command: git push}, cwd: /home/dev/platform/infra-gitops}
+    expect: {verdict: deny, rule_id: push-protected}
+  - name: niega subir una rama local qa/*
+    request: {tool: Bash, input: {command: git push -u origin qa/CARD-1}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: deny, rule_id: push-protected}
+  - name: deja subir la rama del ticket
+    request: {tool: Bash, input: {command: git push -u origin feature/CARD-1}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: allow, rule_id: none}
+  - name: deja borrar una rama remota
+    request: {tool: Bash, input: {command: git push origin --delete main}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: allow, rule_id: none}
+  - name: niega crear un PR con atribución en el cuerpo
+    request: {tool: Bash, input: {command: "gh pr create --title t --reviewer r --body 'Generated with [Claude Code](https://claude.com/claude-code)'"}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: deny, rule_id: ai-attribution}
+  - name: niega crear un PR con atribución en --body-file
+    request: {tool: Bash, input: {command: gh pr create --title t --reviewer r --body-file /tmp/body.md}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: deny, rule_id: ai-attribution}
+  - name: niega editar un PR con atribución
+    request: {tool: Bash, input: {command: "gh pr edit 5 --body 'Co-Authored-By: Claude Opus'"}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: deny, rule_id: ai-attribution}
+  - name: deja editar un PR con descripción limpia
+    request: {tool: Bash, input: {command: "gh pr edit 5 --body 'Descripción limpia'"}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: allow, rule_id: none}
+  - name: niega la atribución también en el workspace
+    request: {tool: Bash, input: {command: "gh pr create --title t --body 'Generated with [Claude Code](https://claude.com/claude-code)'"}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: ai-attribution}
+  - name: deja crear el PR de un commit con recibo
+    request: {tool: Bash, input: {command: gh pr create --title t --reviewer r --body-file /tmp/clean.md}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: allow, rule_id: none}
+  - name: niega crear el PR de un commit sin recibo
+    request: {tool: Bash, input: {command: gh pr create --title t --reviewer r --head feature/CARD-2}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: deny, rule_id: pr-without-receipt}
+  - name: resuelve --repo al repo hermano del workspace
+    request: {tool: Bash, input: {command: gh pr create -R acme/shop-plugin --head feature/CARD-2 --title t}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: pr-without-receipt}
+  - name: un repo fuera del workspace no exige recibo
+    request: {tool: Bash, input: {command: gh pr create --title t}, cwd: /home/dev/elsewhere}
+    expect: {verdict: allow, rule_id: none}
+  - name: niega EnterWorktree en un repo de producto
+    request: {tool: EnterWorktree, input: {}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: deny, rule_id: worktree-outside-root}
+  - name: niega un subagente con isolation worktree en un repo de producto
+    request: {tool: Agent, input: {isolation: worktree, prompt: x}, cwd: /home/dev/platform/shop-plugin/src}
+    expect: {verdict: deny, rule_id: worktree-outside-root}
+  - name: niega git worktree add en un repo de producto
+    request: {tool: Bash, input: {command: cd shop-plugin && git worktree add ../wt}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: worktree-outside-root}
+  - name: deja worktrees del workspace
+    request: {tool: Bash, input: {command: git worktree add .claude/worktrees/x}, cwd: /home/dev/platform}
+    expect: {verdict: allow, rule_id: none}
+  - name: niega spec-kit desde un repo de producto
+    request: {tool: Skill, input: {skill: speckit-specify}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: deny, rule_id: spec-outside-root}
+  - name: niega escribir specs/ en un repo de producto
+    request: {tool: Write, input: {file_path: /home/dev/platform/shop-plugin/specs/001-x/spec.md}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: spec-outside-root}
+  - name: niega editar .specify/ en un repo de producto
+    request: {tool: Edit, input: {file_path: /home/dev/platform/shop-plugin/.specify/memory/constitution.md}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: deny, rule_id: spec-outside-root}
+  - name: niega los scripts de spec-kit tras un cd al repo de producto
+    request: {tool: Bash, input: {command: cd shop-plugin && bash .specify/scripts/bash/create-new-feature.sh --json x}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: spec-outside-root}
+  - name: deja el código del repo de producto
+    request: {tool: Write, input: {file_path: /home/dev/platform/shop-plugin/src/app.php}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: allow, rule_id: none}
+  - name: deja spec-kit en el workspace
+    request: {tool: Skill, input: {skill: speckit-plan}, cwd: /home/dev/platform}
+    expect: {verdict: allow, rule_id: none}
+  - name: deja specs/ del workspace
+    request: {tool: Write, input: {file_path: /home/dev/platform/specs/productos/nuevo.md}, cwd: /home/dev/platform}
+    expect: {verdict: allow, rule_id: none}
+  - name: deja un comando que solo menciona specs
+    request: {tool: Bash, input: {command: grep -r specs src}, cwd: /home/dev/platform/shop-plugin}
+    expect: {verdict: allow, rule_id: none}
+  - name: niega Write en un repo de solo lectura
+    request: {tool: Write, input: {file_path: /home/dev/platform/infra-gitops/apps/values.yaml}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: readonly-repo}
+  - name: niega NotebookEdit en un repo de solo lectura
+    request: {tool: NotebookEdit, input: {notebook_path: /home/dev/platform/infra-gitops/x.ipynb}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: readonly-repo}
+  - name: niega Write con ruta relativa desde el repo de solo lectura
+    request: {tool: Write, input: {file_path: apps/values.yaml}, cwd: /home/dev/platform/infra-gitops}
+    expect: {verdict: deny, rule_id: readonly-repo}
+  - name: niega Write con ruta UNC de WSL
+    request: {tool: Write, input: {file_path: '\\wsl.localhost\Ubuntu\home\dev\platform\infra-gitops\apps\values.yaml'}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: readonly-repo}
+  - name: niega git commit tras cd al repo de solo lectura
+    request: {tool: Bash, input: {command: cd infra-gitops && git commit -m x}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: readonly-repo}
+  - name: niega sed -i sobre un archivo del repo de solo lectura
+    request: {tool: Bash, input: {command: sed -i s/a/b/ /home/dev/platform/infra-gitops/apps/values.yaml}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: readonly-repo}
+  - name: niega perl -i sobre un archivo del repo de solo lectura
+    request: {tool: Bash, input: {command: perl -pi -e s/a/b/ /home/dev/platform/infra-gitops/apps/values.yaml}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: readonly-repo}
+  - name: niega una redirección al repo de solo lectura
+    request: {tool: Bash, input: {command: echo x > /home/dev/platform/infra-gitops/apps/values.yaml}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: readonly-repo}
+  - name: niega rm en el repo de solo lectura
+    request: {tool: Bash, input: {command: rm -rf /home/dev/platform/infra-gitops/apps}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: readonly-repo}
+  - name: niega git reset --hard con cwd en el repo de solo lectura
+    request: {tool: Bash, input: {command: git reset --hard}, cwd: /home/dev/platform/infra-gitops}
+    expect: {verdict: deny, rule_id: readonly-repo}
+  - name: deja git log en el repo de solo lectura
+    request: {tool: Bash, input: {command: git log --oneline -5}, cwd: /home/dev/platform/infra-gitops}
+    expect: {verdict: allow, rule_id: none}
+  - name: deja cat y grep en el repo de solo lectura
+    request: {tool: Bash, input: {command: cat apps/values.yaml && grep -rn image .}, cwd: /home/dev/platform/infra-gitops}
+    expect: {verdict: allow, rule_id: none}
+  - name: deja un comando que solo menciona el repo de solo lectura
+    request: {tool: Bash, input: {command: echo revisar infra-gitops luego}, cwd: /home/dev/platform}
+    expect: {verdict: allow, rule_id: none}
+  - name: niega una herramienta que el motor no evalúa
+    request: {tool: WebFetch, input: {url: https://example.com}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: unknown-input}
+  - name: niega Bash sin comando
+    request: {tool: Bash, input: {}, cwd: /home/dev/platform}
+    expect: {verdict: deny, rule_id: unknown-input}
+  - name: niega un cwd relativo
+    request: {tool: Bash, input: {command: ls}, cwd: platform}
+    expect: {verdict: deny, rule_id: unknown-input}
