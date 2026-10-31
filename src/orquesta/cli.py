@@ -1,9 +1,14 @@
 import argparse
+import json
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from pathlib import Path
 
 from orquesta.errors import OrquestaError
 from orquesta.identity import resolve_actor
+from orquesta.registry.lock import lock, verify
+from orquesta.registry.resolve import resolve
+from orquesta.workspace import Workspace
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -41,15 +46,50 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _emit(payload: object) -> None:
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+def _registry_list(args: argparse.Namespace) -> int:
+    manifests = resolve(Workspace(args.workspace), args.sha)
+    if args.json:
+        _emit([m.to_json() for m in manifests])
+    else:
+        for m in manifests:
+            print(f"{m.id}\t{m.digest}")
+    return 0
+
+
+def _registry_lock(args: argparse.Namespace) -> int:
+    _emit(lock(Workspace(args.workspace), args.sha).to_json())
+    return 0
+
+
+def _registry_verify(args: argparse.Namespace) -> int:
+    approved = verify(Workspace(args.workspace), Path(args.lock))
+    print(f"lock de {approved.sha[:7]} coincide: {len(approved.lock)} activos")
+    return 0
+
+
+HANDLERS: dict[tuple[str, str], Callable[[argparse.Namespace], int]] = {
+    ("registry", "list"): _registry_list,
+    ("registry", "lock"): _registry_lock,
+    ("registry", "verify"): _registry_verify,
+}
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    handler = HANDLERS.get((args.command, args.action))
     try:
         resolve_actor()
+        if handler is None:
+            print(f"orquesta {args.command} {args.action}: todavía no implementado", file=sys.stderr)
+            return 1
+        return handler(args)
     except OrquestaError as error:
         error.report(args.json)
         return error.exit_code
-    print(f"orquesta {args.command} {args.action}: todavía no implementado", file=sys.stderr)
-    return 1
 
 
 if __name__ == "__main__":

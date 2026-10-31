@@ -6,7 +6,7 @@ import pytest
 
 from orquesta.cli import main
 
-ARGS = ["registry", "list", "--workspace", ".", "--sha", "HEAD"]
+ARGS = ["audit", "verify"]
 
 
 @pytest.fixture

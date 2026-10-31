@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agent-asset-manifest.schema.json",
+  "title": "AgentAssetManifest",
+  "description": "Activo resuelto por `orquesta registry` en un SHA aprobado: frontmatter + entrada de catalog.yaml (FR-019 a FR-023).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "name", "version", "sha", "path", "digest", "owner", "source", "classification", "egress", "external_effects", "evals", "approvals"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^(agent|skill|hook|mcp|engine|image)/[a-z0-9][a-z0-9-]*$" },
+    "type": { "enum": ["agent", "skill", "hook", "mcp", "engine", "image"] },
+    "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "description": { "type": "string", "minLength": 1 },
+    "tools": { "type": "array", "items": { "type": "string" } },
+    "disable_model_invocation": { "type": "boolean" },
+    "version": { "type": "string", "pattern": "^[0-9a-f]{7,12}$" },
+    "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "path": { "type": "string", "pattern": "^\\.claude/(agents|skills)/[A-Za-z0-9._/-]+$", "not": { "pattern": "\\.\\." } },
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "owner": { "type": "string", "minLength": 1 },
+    "source": {
+      "oneOf": [
+        { "const": "workspace" },
+        { "type": "object", "additionalProperties": false, "required": ["url", "commit"], "properties": { "url": { "type": "string", "format": "uri" }, "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" } } }
+      ]
+    },
+    "license": { "type": "string" },
+    "classification": { "enum": ["public", "internal", "confidential", "regulated"] },
+    "egress": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "external_effects": { "type": "array", "uniqueItems": true, "items": { "enum": ["commit", "push", "pr", "jira-comment", "jira-transition", "third-party"] } },
+    "evals": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "expires": { "type": "string", "format": "date" },
+    "approvals": {
+      "type": "array",
+      "items": { "type": "object", "additionalProperties": false, "required": ["by", "at", "sha"], "properties": { "by": { "type": "string" }, "at": { "type": "string", "format": "date-time" }, "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" } } }
+    }
+  },
+  "allOf": [
+    { "if": { "properties": { "source": { "type": "object" } } }, "then": { "required": ["license"] } },
+    { "if": { "properties": { "external_effects": { "minItems": 1 } } }, "then": { "required": ["disable_model_invocation"], "properties": { "disable_model_invocation": { "const": true } } } }
+  ]
+}

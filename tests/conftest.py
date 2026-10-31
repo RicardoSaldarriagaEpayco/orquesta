@@ -42,3 +42,39 @@ class Repo:
 @pytest.fixture
 def repo(tmp_path: Path) -> Repo:
     return Repo(tmp_path / "workspace")
+
+
+CATALOG = """version: 1
+defaults:
+  owner: platform-team
+  source: workspace
+  classification: internal
+  egress: []
+  external_effects: []
+  evals: []
+  expires: null
+  approvals: []
+assets:
+  - id: agent/reviewer
+    evals: [routing]
+  - id: skill/ship
+    external_effects: [commit, push, pr]
+  - id: skill/vendored
+    source: {url: https://example.com/vendor/kit, commit: 0123456789abcdef0123456789abcdef01234567}
+    license: MIT
+"""
+
+FILES = {
+    "catalog.yaml": CATALOG,
+    ".claude/agents/reviewer.md": "---\nname: reviewer\ndescription: Revisa.\ntools: Read, Grep\n---\n\nCuerpo.\n",
+    ".claude/skills/ship/SKILL.md": "---\nname: ship\ndescription: Sube.\ndisable-model-invocation: true\n---\n",
+    ".claude/skills/ship/reference.md": "detalle\n",
+    ".claude/skills/vendored/SKILL.md": '---\nname: "vendored"\ndescription: De terceros.\n---\n',
+    "README.md": "fuera de .claude\n",
+}
+
+
+@pytest.fixture
+def workspace(repo: Repo) -> Repo:
+    repo.approve(repo.commit(FILES))
+    return repo
