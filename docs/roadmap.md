@@ -10,16 +10,11 @@ Cada control se exige antes de la fase que lo necesita. Las versiones se publica
 | **F4 Conocimiento + UI** | pgvector, interfaz web | Clasificación de datos por repo y ruta; prohibición de indexar secretos y datos regulados |
 | **F5 Escala** | Modelos privados, SSO multiusuario, MCP internos, motores adicionales con traducción de activos y paridad | Alcance de datos regulados aprobado por el tenant |
 
-## Cierre de F1 (en curso)
+## Cierre de F1
 
-Ver [`specs/001-nucleo/tasks.md`](../specs/001-nucleo/tasks.md).
+Hecho salvo la versión `0.1.0`: ver [`specs/001-nucleo/tasks.md`](../specs/001-nucleo/tasks.md).
 
-## LangGraph (F2)
+## F2 (en curso)
 
-Entra cuando haya grafos que lo usen, no antes (principio VII). Primer alcance previsto:
-
-- Grafo de triage de solo lectura: lee el ticket por MCP, consulta el registro y el motor de políticas, pide al
-  gateway la clasificación, y termina en `agent`, `ask` o `no_action`, con cada paso auditado.
-- Checkpointer en Postgres (mismo servidor que la auditoría, esquema aparte).
-- Nodos `interrupt` como puntos de aprobación humana, con el actor registrado.
-- Las evaluaciones de F1 corren contra el grafo para medir el ruteo real (SC-004).
+Spec, plan y tareas en [`specs/002-solo-lectura/`](../specs/002-solo-lectura/). Primer entregable: grafo de triage de
+solo lectura con checkpointer Postgres en esquema propio y aprobación por `interrupt`, servido por CLI y API HTTP.
