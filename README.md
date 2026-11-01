@@ -52,7 +52,7 @@ Para la auditoría: `AUDIT_OWNER_PASSWORD=… AUDIT_WRITER_PASSWORD=… docker c
 
 ## Estado
 
-F1 (núcleo headless) en cierre. Todavía sin versión publicada.
+F1 (núcleo headless) cerrada salvo la versión `0.1.0`. CI: `ruff`, `pytest` con Postgres y `tenant_leak.py`.
 
 ## Licencia
 
