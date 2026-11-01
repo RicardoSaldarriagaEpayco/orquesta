@@ -75,6 +75,11 @@ def _parser() -> argparse.ArgumentParser:
     checker.add_argument("--sha", default="HEAD")
     checker.add_argument("--public-key", action="append", required=True)
 
+    token = commands.add_parser("token", help="tokens de la API HTTP").add_subparsers(dest="action", required=True)
+    creator = token.add_parser("create", parents=[common])
+    creator.add_argument("--actor", required=True)
+    creator.add_argument("--grant", action="append", required=True, help="<repo|*>=<rol>[,<rol>]")
+    creator.add_argument("--file", help="por defecto ORQUESTA_API_TOKENS o ~/.config/orquesta/api-tokens.yaml")
     return parser
 
 
@@ -288,6 +293,18 @@ def _receipt_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _token_create(args: argparse.Namespace) -> int:
+    from orquesta.api.auth import TokenStore, parse_grants, tokens_path
+
+    try:
+        grants = parse_grants(args.grant)
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 2
+    print(TokenStore(Path(args.file) if args.file else tokens_path()).create(args.actor, grants))
+    return 0
+
+
 HANDLERS: dict[tuple[str, str], Callable[[argparse.Namespace], int]] = {
     ("registry", "list"): _registry_list,
     ("registry", "lock"): _registry_lock,
@@ -299,6 +316,7 @@ HANDLERS: dict[tuple[str, str], Callable[[argparse.Namespace], int]] = {
     ("receipt", "keygen"): _receipt_keygen,
     ("receipt", "sign"): _receipt_sign,
     ("receipt", "verify"): _receipt_verify,
+    ("token", "create"): _token_create,
 }
 
 

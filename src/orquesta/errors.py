@@ -111,6 +111,24 @@ class AuditUnavailable(OrquestaError):
         super().__init__(f"auditoría no disponible: {reason}")
 
 
+class Unauthenticated(OrquestaError):
+    exit_code = 15
+
+    def __init__(self) -> None:
+        super().__init__("token ausente o no reconocido")
+
+
+class Forbidden(OrquestaError):
+    exit_code = 15
+
+    def __init__(self, actor: str, role: str, repo: str | None) -> None:
+        self.actor, self.role, self.repo = actor, role, repo
+        super().__init__(f"{actor} no tiene el rol {role} en {repo or 'el tenant'}")
+
+    def fields(self) -> dict[str, object]:
+        return {"actor": self.actor, "role": self.role, "repo": self.repo}
+
+
 class BudgetExceeded(OrquestaError):
     exit_code = 10
 
