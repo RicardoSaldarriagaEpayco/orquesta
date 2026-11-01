@@ -21,7 +21,8 @@ ni en sus repos; solo leen por `git show` y escriben en la base de auditoría o 
 `AssetError(asset_id, field, reason)`, `ShaNotApproved(sha)`, `LockMismatch(differences)`, `AuditChainBroken(seq)`,
 `AuditKeyInsecure(path, reason)`, `ModelNotAllowed(provider, model)`, `ProviderNotAllowed(provider)`,
 `ProviderError(provider, reason)`, `SuiteInvalid(suite, reason)`, `BudgetExceeded(limit_usd, spent_usd)`
-(código `10`), `KeyInsecure(path, reason)` (código `9`), `ReceiptInvalid(sha, reason)` (código `11`). Se imprimen como JSON en stderr con `--json` y como
+(código `10`), `KeyInsecure(path, reason)` (código `9`), `ReceiptInvalid(sha, reason)` (código `11`),
+`TicketError(ticket, reason)` (código `13`). Se imprimen como JSON en stderr con `--json` y como
 una línea legible sin él.
 
 ## Entorno

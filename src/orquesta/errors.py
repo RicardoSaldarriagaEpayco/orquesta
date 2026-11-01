@@ -111,6 +111,17 @@ class AuditUnavailable(OrquestaError):
         super().__init__(f"auditoría no disponible: {reason}")
 
 
+class TicketError(OrquestaError):
+    exit_code = 13
+
+    def __init__(self, ticket: str, reason: str) -> None:
+        self.ticket, self.reason = ticket, reason
+        super().__init__(f"{ticket}: {reason}")
+
+    def fields(self) -> dict[str, object]:
+        return {"ticket": self.ticket, "reason": self.reason}
+
+
 class BudgetExceeded(OrquestaError):
     exit_code = 10
 
