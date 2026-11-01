@@ -17,6 +17,7 @@ dependencies = [
 
 [project.scripts]
 orquesta = "orquesta.cli:main"
+orquesta-egress = "orquesta.sandbox.egress:main"
 
 [dependency-groups]
 dev = [
