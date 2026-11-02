@@ -22,7 +22,8 @@ ni en sus repos; solo leen por `git show` y escriben en la base de auditoría o 
 `AuditKeyInsecure(path, reason)`, `ModelNotAllowed(provider, model)`, `ProviderNotAllowed(provider)`,
 `ProviderError(provider, reason)`, `SuiteInvalid(suite, reason)`, `BudgetExceeded(limit_usd, spent_usd)`
 (código `10`), `KeyInsecure(path, reason)` (código `9`), `ReceiptInvalid(sha, reason)` (código `11`),
-`TicketError(ticket, reason)` (código `13`). Se imprimen como JSON en stderr con `--json` y como
+`TicketError(ticket, reason)` (código `13`),
+`GraphStoreUnavailable(reason)` (código `12`). Se imprimen como JSON en stderr con `--json` y como
 una línea legible sin él.
 
 ## Entorno
@@ -31,6 +32,7 @@ una línea legible sin él.
 |---|---|
 | `ORQUESTA_ACTOR` | Identidad del operador; si falta, la de `gh auth status`. Sin ninguna, el núcleo no arranca |
 | `ORQUESTA_AUDIT_DSN` | Credencial de `audit_writer`. Si no está, ningún comando escribe auditoría |
+| `ORQUESTA_GRAPH_DSN` | Credencial de `graph_writer` para el estado de los grafos (esquema `graph`) |
 | `ORQUESTA_AUDIT_KEY` | Ruta de la llave HMAC (por defecto `~/.config/orquesta/audit.key`, permisos `0600`) |
 | `ORQUESTA_ENTRYPOINT` | `entrypoint` del `PolicyRequest` en modo `--hook` (por defecto `claude-wsl`) |
 | `ANTHROPIC_API_KEY` | Llave del proveedor; la lee solo el gateway |

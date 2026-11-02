@@ -122,6 +122,13 @@ class TicketError(OrquestaError):
         return {"ticket": self.ticket, "reason": self.reason}
 
 
+class GraphStoreUnavailable(OrquestaError):
+    exit_code = 12
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(f"estado de grafos no disponible: {reason}")
+
+
 class BudgetExceeded(OrquestaError):
     exit_code = 10
 
