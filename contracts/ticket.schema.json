@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ticket.schema.json",
+  "title": "Ticket",
+  "description": "Ticket que entrega una TicketSource al grafo de triage (FR-061). El texto no se guarda en el checkpoint ni en la auditoría.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["key", "project", "summary"],
+  "properties": {
+    "key": {"type": "string", "pattern": "^[A-Z][A-Z0-9]+-[0-9]+$"},
+    "project": {"type": "string", "minLength": 1},
+    "summary": {"type": "string", "minLength": 1, "maxLength": 400},
+    "description": {"type": "string", "maxLength": 20000},
+    "labels": {"type": "array", "items": {"type": "string"}},
+    "repo": {"type": ["string", "null"], "pattern": "^[a-z0-9._-]+$"}
+  }
+}
