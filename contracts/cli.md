@@ -23,7 +23,8 @@ ni en sus repos; solo leen por `git show` y escriben en la base de auditoría o 
 `ProviderError(provider, reason)`, `SuiteInvalid(suite, reason)`, `BudgetExceeded(limit_usd, spent_usd)`
 (código `10`), `KeyInsecure(path, reason)` (código `9`), `ReceiptInvalid(sha, reason)` (código `11`),
 `GraphStoreUnavailable(reason)` (código `12`),
-`TicketError(ticket, reason)` (código `13`). Se imprimen como JSON en stderr con `--json` y como
+`TicketError(ticket, reason)` (código `13`),
+`CredentialInvalid(reason)` (código `14`). Se imprimen como JSON en stderr con `--json` y como
 una línea legible sin él.
 
 ## Entorno
@@ -35,4 +36,5 @@ una línea legible sin él.
 | `ORQUESTA_GRAPH_DSN` | Credencial de `graph_writer` para el estado de los grafos (esquema `graph`) |
 | `ORQUESTA_AUDIT_KEY` | Ruta de la llave HMAC (por defecto `~/.config/orquesta/audit.key`, permisos `0600`) |
 | `ORQUESTA_ENTRYPOINT` | `entrypoint` del `PolicyRequest` en modo `--hook` (por defecto `claude-wsl`) |
+| `ORQUESTA_GATEWAY_KEY` | Llave HMAC del gateway para credenciales de episodio (por defecto `~/.config/orquesta/gateway.key`, `0600`) |
 | `ANTHROPIC_API_KEY` | Llave del proveedor; la lee solo el gateway |
