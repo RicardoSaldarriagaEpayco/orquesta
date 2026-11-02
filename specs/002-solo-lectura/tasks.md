@@ -6,8 +6,8 @@ Cada tarea es un PR con sus pruebas. `[P]` = puede ir en paralelo con la anterio
 
 ## Fundación
 
-- [ ] G001 Esquema `graph` y rol `graph_writer` en `docker/initdb/20-graph.sh`; `graphs/checkpoint.py` abre `PostgresSaver` con `search_path=graph`; prueba de aislamiento entre roles (FR-050)
-- [ ] G002 [P] `TicketSource` y `FileTicketSource`; contrato `ticket.schema.json` (FR-061)
+- [x] G001 Esquema `graph` y rol `graph_writer` en `docker/initdb/20-graph.sh`; `graphs/checkpoint.py` abre `PostgresSaver` con `search_path=graph`; prueba de aislamiento entre roles (FR-050)
+- [x] G002 [P] `TicketSource` y `FileTicketSource`; contrato `ticket.schema.json` (FR-061)
 
 ## US1 Triage con aprobación
 
