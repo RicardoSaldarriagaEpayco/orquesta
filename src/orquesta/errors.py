@@ -111,6 +111,24 @@ class AuditUnavailable(OrquestaError):
         super().__init__(f"auditoría no disponible: {reason}")
 
 
+class GraphStoreUnavailable(OrquestaError):
+    exit_code = 12
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(f"estado de grafos no disponible: {reason}")
+
+
+class TicketError(OrquestaError):
+    exit_code = 13
+
+    def __init__(self, ticket: str, reason: str) -> None:
+        self.ticket, self.reason = ticket, reason
+        super().__init__(f"{ticket}: {reason}")
+
+    def fields(self) -> dict[str, object]:
+        return {"ticket": self.ticket, "reason": self.reason}
+
+
 class Unauthenticated(OrquestaError):
     exit_code = 15
 
@@ -127,13 +145,6 @@ class Forbidden(OrquestaError):
 
     def fields(self) -> dict[str, object]:
         return {"actor": self.actor, "role": self.role, "repo": self.repo}
-
-
-class GraphStoreUnavailable(OrquestaError):
-    exit_code = 12
-
-    def __init__(self, reason: str) -> None:
-        super().__init__(f"estado de grafos no disponible: {reason}")
 
 
 class BudgetExceeded(OrquestaError):
