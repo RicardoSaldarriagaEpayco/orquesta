@@ -17,7 +17,7 @@ Cada tarea es un PR con sus pruebas. `[P]` = puede ir en paralelo con la anterio
 
 ## US2 API HTTP
 
-- [ ] G006 `api/auth.py`: tokens con hash en archivo `0600`, roles `viewer`/`operator`/`approver` por repo, evento `authz` (FR-056)
+- [x] G006 `api/auth.py`: tokens con hash en archivo `0600`, roles `viewer`/`operator`/`approver` por repo, evento `authz` (FR-056)
 - [ ] G007 `api/app.py`: `/v1/policy/eval`, `/v1/registry`, `/v1/runs`, `/v1/runs/{id}`, `/v1/runs/{id}/resume`, `/healthz`; `orquesta serve` en `127.0.0.1`; paridad con el CLI; `contracts/api.md` (FR-055, FR-057)
 
 ## US3 Episodio aislado

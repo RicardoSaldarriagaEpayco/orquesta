@@ -13,6 +13,7 @@ ni en sus repos; solo leen por `git show` y escriben en la base de auditoría o 
 | `receipt keygen [--key <ruta>]` | Crea la llave Ed25519 del operador (`0600`, nunca sobrescribe) e imprime la pública | `0` · `9` |
 | `receipt sign --repo <ruta> --check <nombre> --command <cmd> --tool-version <v> --result pass\|fail` | Firma y guarda el recibo de HEAD en `<git-common-dir>/orquesta-receipts/<sha>.json` | `0` · `9` · `11` |
 | `receipt verify --repo <ruta> [--sha <ref>] --public-key <b64>...` | Verifica firma, llave reconocida, commit y árbol, y que la puerta pasó | `0` · `11` recibo inválido |
+| `token create --actor <id> --grant <repo\|*>=<rol>[,<rol>]... [--file <ruta>]` | Crea un token de la API, guarda solo su hash (`0600`) e imprime el token una vez. Roles: `viewer`, `operator`, `approver`; cualquier rol incluye `viewer` | `0` · `2` permiso inválido · `9` |
 | `audit verify` | Recorre la cadena HMAC | `0` · `7` cadena rota · `9` sin llave o sin base |
 | `eval run --workspace <ruta> --suite <ruta-en-workspace> --sha <sha> --provider fake\|anthropic [--answers <tabla>] [--baseline <EvalRun>] [--record <ruta>]` | Corre una suite de ruteo y, con `--record`, escribe el `PromotionRecord` | `0` · `8` suite inválida |
 
@@ -24,7 +25,8 @@ ni en sus repos; solo leen por `git show` y escriben en la base de auditoría o 
 (código `10`), `KeyInsecure(path, reason)` (código `9`), `ReceiptInvalid(sha, reason)` (código `11`),
 `GraphStoreUnavailable(reason)` (código `12`),
 `TicketError(ticket, reason)` (código `13`),
-`CredentialInvalid(reason)` (código `14`). Se imprimen como JSON en stderr con `--json` y como
+`CredentialInvalid(reason)` (código `14`),
+`Unauthenticated()` y `Forbidden(actor, role, repo)` (código `15`). Se imprimen como JSON en stderr con `--json` y como
 una línea legible sin él.
 
 ## Entorno
@@ -36,5 +38,6 @@ una línea legible sin él.
 | `ORQUESTA_GRAPH_DSN` | Credencial de `graph_writer` para el estado de los grafos (esquema `graph`) |
 | `ORQUESTA_AUDIT_KEY` | Ruta de la llave HMAC (por defecto `~/.config/orquesta/audit.key`, permisos `0600`) |
 | `ORQUESTA_ENTRYPOINT` | `entrypoint` del `PolicyRequest` en modo `--hook` (por defecto `claude-wsl`) |
+| `ORQUESTA_API_TOKENS` | Hashes de tokens de la API y sus roles por repo (por defecto `~/.config/orquesta/api-tokens.yaml`, `0600`) |
 | `ORQUESTA_GATEWAY_KEY` | Llave HMAC del gateway para credenciales de episodio (por defecto `~/.config/orquesta/gateway.key`, `0600`) |
 | `ANTHROPIC_API_KEY` | Llave del proveedor; la lee solo el gateway |
