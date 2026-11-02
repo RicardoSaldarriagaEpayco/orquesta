@@ -36,10 +36,15 @@ códigos de salida y variables de entorno, en [`contracts/cli.md`](contracts/cli
 Para la auditoría: `AUDIT_OWNER_PASSWORD=… AUDIT_WRITER_PASSWORD=… docker compose up -d`, una llave en
 `~/.config/orquesta/audit.key` con permisos `0600` y `ORQUESTA_AUDIT_DSN` con la credencial de `audit_writer`.
 
+Los grafos guardan su estado en el esquema `graph` del mismo servidor, con el rol `graph_writer`
+(`GRAPH_WRITER_PASSWORD=…` al levantar y `ORQUESTA_GRAPH_DSN` con su credencial). En un volumen creado antes, se agrega
+con `docker compose exec audit-db sh /docker-entrypoint-initdb.d/20-graph.sh`.
+
 ## Documentación
 
 - [Arquitectura](docs/architecture.md) y [roadmap](docs/roadmap.md)
-- [Spec](specs/001-nucleo/spec.md) y [tareas](specs/001-nucleo/tasks.md)
+- F1: [spec](specs/001-nucleo/spec.md) y [tareas](specs/001-nucleo/tasks.md)
+- F2: [spec](specs/002-solo-lectura/spec.md), [plan](specs/002-solo-lectura/plan.md) y [tareas](specs/002-solo-lectura/tasks.md)
 - [Adaptador de Claude Code](adapters/claude-code/README.md)
 - [Constitución](.specify/memory/constitution.md) y [ADRs](docs/adr/)
 
