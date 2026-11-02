@@ -39,7 +39,8 @@ Para la auditoría: `AUDIT_OWNER_PASSWORD=… AUDIT_WRITER_PASSWORD=… docker c
 ## Documentación
 
 - [Arquitectura](docs/architecture.md) y [roadmap](docs/roadmap.md)
-- [Spec](specs/001-nucleo/spec.md) y [tareas](specs/001-nucleo/tasks.md)
+- F1: [spec](specs/001-nucleo/spec.md) y [tareas](specs/001-nucleo/tasks.md)
+- F2: [spec](specs/002-solo-lectura/spec.md), [plan](specs/002-solo-lectura/plan.md) y [tareas](specs/002-solo-lectura/tasks.md)
 - [Adaptador de Claude Code](adapters/claude-code/README.md)
 - [Constitución](.specify/memory/constitution.md) y [ADRs](docs/adr/)
 
