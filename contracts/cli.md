@@ -25,6 +25,7 @@ ni en sus repos; solo leen por `git show` y escriben en la base de auditoría o 
 (código `10`), `KeyInsecure(path, reason)` (código `9`), `ReceiptInvalid(sha, reason)` (código `11`),
 `GraphStoreUnavailable(reason)` (código `12`),
 `TicketError(ticket, reason)` (código `13`),
+`CredentialInvalid(reason)` (código `14`),
 `Unauthenticated()` y `Forbidden(actor, role, repo)` (código `15`). Se imprimen como JSON en stderr con `--json` y como
 una línea legible sin él.
 
@@ -38,4 +39,5 @@ una línea legible sin él.
 | `ORQUESTA_AUDIT_KEY` | Ruta de la llave HMAC (por defecto `~/.config/orquesta/audit.key`, permisos `0600`) |
 | `ORQUESTA_ENTRYPOINT` | `entrypoint` del `PolicyRequest` en modo `--hook` (por defecto `claude-wsl`) |
 | `ORQUESTA_API_TOKENS` | Hashes de tokens de la API y sus roles por repo (por defecto `~/.config/orquesta/api-tokens.yaml`, `0600`) |
+| `ORQUESTA_GATEWAY_KEY` | Llave HMAC del gateway para credenciales de episodio (por defecto `~/.config/orquesta/gateway.key`, `0600`) |
 | `ANTHROPIC_API_KEY` | Llave del proveedor; la lee solo el gateway |

@@ -129,6 +129,17 @@ class TicketError(OrquestaError):
         return {"ticket": self.ticket, "reason": self.reason}
 
 
+class CredentialInvalid(OrquestaError):
+    exit_code = 14
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(f"credencial de episodio inválida: {reason}")
+
+    def fields(self) -> dict[str, object]:
+        return {"reason": self.reason}
+
+
 class Unauthenticated(OrquestaError):
     exit_code = 15
 
