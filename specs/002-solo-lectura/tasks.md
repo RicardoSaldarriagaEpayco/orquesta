@@ -22,7 +22,7 @@ Cada tarea es un PR con sus pruebas. `[P]` = puede ir en paralelo con la anterio
 
 ## US3 Episodio aislado
 
-- [ ] G008 `gateway/credential.py`: credencial de episodio firmada, `exp` ≤ 15 min, ligada a corrida, modelos y presupuesto; `POST /v1/models/complete` la exige (FR-060, SC-012)
+- [x] G008 `gateway/credential.py`: credencial de episodio firmada, `exp` ≤ 15 min, ligada a corrida, modelos y presupuesto; `POST /v1/models/complete` la exige (FR-060, SC-012)
 - [ ] G009 [P] `sandbox/egress.py`: proxy `CONNECT` con allowlist exacta y evento `egress` (FR-059, SC-011)
 - [ ] G010 `sandbox/runner.py`: contenedor rootless efímero sin capacidades, red interna solo hacia el proxy, limpieza garantizada (FR-058)
 
